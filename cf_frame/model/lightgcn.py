@@ -26,13 +26,12 @@ class LightGCN(BaseModel):
     def _propagate(self, adj, embeds):
         return torch.spmm(adj, embeds)
 
-    def forward(self, adj, keep_rate):
+    def forward(self):
         if not self.training and self.final_embeds is not None:
             return self.final_embeds[:self.user_num], self.final_embeds[self.user_num:]
         embeds = torch.concat([self.user_embeds, self.item_embeds], axis=0)
         embeds_list = [embeds]
-        if self.training:
-            adj = self.edge_dropper(adj, keep_rate)
+        adj = self.edge_dropper(self.adj, self.keep_rate) if self.training else self.adj
         for _ in range(self.layer_num):
             embeds = self._propagate(adj, embeds_list[-1])
             embeds_list.append(embeds)
@@ -43,7 +42,7 @@ class LightGCN(BaseModel):
     def full_predict(self, batch_data):
         if self.training:
             raise Exception('full_predict should be called in eval mode')
-        user_embeds, item_embeds = self.forward(self.adj, 1.0)
+        user_embeds, item_embeds = self.forward()
         pck_users, train_mask = batch_data
         pck_users = pck_users.long()
         pck_user_embeds = user_embeds[pck_users]

@@ -12,7 +12,7 @@ class BPR:
         ancs, poss, negs = batch_data
         
         # compute BPR loss
-        user_embeds, item_embeds = model.forward(model.adj, model.keep_rate)
+        user_embeds, item_embeds = model.forward()
         anc_embeds, pos_embeds, neg_embeds = user_embeds[ancs], item_embeds[poss], item_embeds[negs]
         pos_preds = (anc_embeds * pos_embeds).sum(dim=-1)
         neg_preds = (anc_embeds * neg_embeds).sum(dim=-1)
