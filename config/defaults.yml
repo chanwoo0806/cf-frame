@@ -1,0 +1,20 @@
+# Basic
+rand_seed: 2024
+dataset: yelp2018
+epoch: 1500
+trn_batch: 2048
+tensorboard: 1
+
+# Early-stop
+tst_step: 5
+patience: 10
+criterion: [1, 1]
+
+# Test
+metrics: [recall, ndcg]
+ks: [10, 20, 50]
+tst_batch: 1024
+
+# Develop
+embed_dim: 64
+keep_rate: 1.0
