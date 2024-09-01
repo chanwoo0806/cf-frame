@@ -26,3 +26,29 @@ class BPR:
         loss = bpr_loss + reg_loss
         losses = {'bpr_loss': bpr_loss, 'reg_loss': reg_loss}
         return loss, losses
+    
+class DirectAU:
+    def __init__(self):
+        self.gamma = args.gamma
+        self.type = 'pairwise' # actually, it's pointwise
+        
+    def _alignment(self, x, y, alpha=2):
+        x, y = F.normalize(x, dim=-1), F.normalize(y, dim=-1)
+        return (x - y).norm(p=2, dim=1).pow(alpha).mean()
+    
+    def _uniformity(self, x):
+        x = F.normalize(x, dim=-1)
+        return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
+    
+    def __call__(self, model, batch_data):
+        ancs, poss, _ = batch_data
+        
+        # compute alignment and uniformity loss
+        user_embeds, item_embeds = model.forward()
+        anc_embeds, pos_embeds = user_embeds[ancs], item_embeds[poss]
+        align = self._alignment(anc_embeds, pos_embeds)
+        uniform = 0.5 * (self._uniformity(anc_embeds) + self._uniformity(pos_embeds))
+        
+        loss = align + self.gamma * uniform
+        losses = {'align': align, 'uniform': uniform}
+        return loss, losses
