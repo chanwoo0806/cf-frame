@@ -64,7 +64,7 @@ def configurate(explicit_args):
     
     return args
 
-EXPLICIT = False
+EXPLICIT = False # True if you want to give arguments without using command line
 explicit_args = [
     "--comment", "test",
     "--model", "lightgcn",
