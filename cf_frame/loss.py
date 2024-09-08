@@ -96,5 +96,7 @@ class CCL:
         reg_loss = self._l2_regularization(anc_embeds, pos_embeds, neg_embeds)
 
         loss = pos_loss + neg_loss + self.embed_reg * reg_loss
+        loss.requires_grad = True
+
         losses = {'ccl': loss, 'pos': pos_loss, 'neg': neg_loss, 'reg': reg_loss}        
         return loss, losses
