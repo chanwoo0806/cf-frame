@@ -60,29 +60,24 @@ class SimpleX(BaseModel):
         if not self.is_training and self.final_user_embeds is not None and self.final_item_embeds is not None:
             return self.final_user_embeds, self.final_item_embeds
 
-        user_embeds = self.user_embeds
-        item_embeds = self.item_embeds
-
-        interacted = self.interacted
-
         # user_interacted = b x seq_len x embedding_dim
-        interacted_embeds = self.item_embeds[interacted]
-        mask = (interacted == -1)
+        interacted_embeds = self.item_embeds[self.interacted]
+        mask = (self.interacted == -1)
         interacted_embeds[mask] = 0
 
-        aggregated_user_embeds = self.behavior_aggregation(user_embeds, interacted_embeds)
+        aggregated_user_embeds = self.behavior_aggregation(self.user_embeds, interacted_embeds)
 
         if self.is_training:
             aggregated_user_embeds = self.dropout(aggregated_user_embeds)
 
         if self.score == 'cosine':
             aggregated_user_embeds = F.normalize(aggregated_user_embeds)
-            item_embeds = F.normalize(item_embeds)
+            self.item_embeds = F.normalize(self.item_embeds)
 
         self.final_user_embeds = aggregated_user_embeds
-        self.final_item_embeds = item_embeds
+        self.final_item_embeds = self.item_embeds
 
-        return aggregated_user_embeds, item_embeds
+        return aggregated_user_embeds, self.item_embeds
         
 
     def full_predict(self, batch_data):
