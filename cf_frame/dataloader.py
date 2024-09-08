@@ -6,7 +6,7 @@ from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
-import cf_frame.sampling import sampling
+import cf_frame.sampling as sampling
 
 
 class PairwiseTrnData(data.Dataset):
