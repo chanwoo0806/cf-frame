@@ -77,11 +77,11 @@ class CCL:
         neg_loss = (self.neg_weight / neg_num) * neg_loss.mean()
         return neg_loss
     
-    def _l2_regularization(self, *embeds):
-        l2_loss = 0
-        for embed in embeds:
-            l2_loss += torch.sum(embed.pow(2))
-        return l2_loss
+    # def _l2_regularization(self, *embeds):
+    #     l2_loss = 0
+    #     for embed in embeds:
+    #         l2_loss += torch.sum(embed.pow(2))
+    #     return l2_loss
 
     def __call__(self, model, batch_data):
         ancs, poss, negs = batch_data
@@ -95,8 +95,7 @@ class CCL:
         neg_loss = self._negative_loss(anc_embeds, neg_embeds)
         reg_loss = self._l2_regularization(anc_embeds, pos_embeds, neg_embeds)
 
-        loss = pos_loss + neg_loss + self.embed_reg * reg_loss
-        loss.requires_grad = True
+        loss = pos_loss + neg_loss #+ self.embed_reg * reg_loss
 
         losses = {'ccl': loss, 'pos': pos_loss, 'neg': neg_loss, 'reg': reg_loss}        
         return loss, losses
