@@ -6,6 +6,8 @@ from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
+import cf_frame.sampling import sampling
+
 
 class PairwiseTrnData(data.Dataset):
     def __init__(self, coomat):
@@ -29,6 +31,7 @@ class PairwiseTrnData(data.Dataset):
     def __getitem__(self, idx):
         return self.rows[idx], self.cols[idx], self.negs[idx]
 
+
 class AllRankTstData(data.Dataset):
     def __init__(self, coomat, trn_mat):
         self.csrmat = (trn_mat.tocsr() != 0) * 1.0
@@ -50,6 +53,40 @@ class AllRankTstData(data.Dataset):
         pck_mask = self.csrmat[pck_user].toarray()
         pck_mask = np.reshape(pck_mask, [-1])
         return pck_user, pck_mask
+
+
+class MultiNegTrnData(data.Dataset):
+    def __init__(self, coomat):
+        self.rows = coomat.row
+        self.cols = coomat.col
+        self.dokmat = coomat.todok()
+
+        self.neg_num = args.neg_num
+        self.user_num = args.user_num
+        self.item_num = args.item_num
+        self.interaction_num = len(self.rows)
+
+        all_pos = [list() for _ in range(coomat.shape[0])]
+        for i in range(len(coomat.data)):
+            row = coomat.row[i]
+            col = coomat.col[i]
+            all_pos[row].append(col)
+        self.all_pos = all_pos
+
+    def sample_negs(self):
+        self.result = sampling.sample_negative_ByUser(
+            self.rows,
+            self.item_num,
+            self.all_pos,
+            self.neg_num
+        )
+
+    def __len__(self):
+        return self.interaction_num
+
+    def __getitem__(self, idx):
+        return self.result[idx, 0], self.result[idx, 1], self.result[idx, 2:]
+
 
 class DataHandler:
     def __init__(self, loss_type):
@@ -117,8 +154,10 @@ class DataHandler:
         # Load dataset
         if self.loss_type == 'pairwise':
             trn_data = PairwiseTrnData(trn_mat)
-        # elif self.loss_type == 'pointwise':
-        # 	trn_data = PointwiseTrnData(trn_mat)
+        elif self.loss_type == 'multineg':
+            trn_data = MultiNegTrnData(trn_mat)
+        else:
+            raise NotImplementedError
         val_data = AllRankTstData(val_mat, trn_mat)
         tst_data = AllRankTstData(tst_mat, trn_mat)
         
