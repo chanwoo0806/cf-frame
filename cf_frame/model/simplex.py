@@ -72,7 +72,7 @@ class SimpleX(BaseModel):
 
         if self.score == 'cosine':
             aggregated_user_embeds = F.normalize(aggregated_user_embeds)
-            self.item_embeds = F.normalize(self.item_embeds)
+            self.item_embeds = torch.nn.Parameter(F.normalize(self.item_embeds), requires_grad=True)
 
         self.final_user_embeds = aggregated_user_embeds
         self.final_item_embeds = self.item_embeds
