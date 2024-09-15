@@ -52,3 +52,53 @@ class DirectAU:
         loss = align + self.gamma * uniform
         losses = {'align': align, 'uniform': uniform}
         return loss, losses
+    
+
+# UltraGCN constraint loss
+class Constraint:
+    def __init__(self):
+        self.weight_lambda = args.weight_lambda
+        self.weight_gamma  = args.weight_gamma
+
+    def _constraint_user_item(self, anc_embeds, pos_embeds, neg_embeds):
+        # L_C loss
+        pos_beta = 0
+        neg_beta = 0
+
+        pos_term = pos_beta * torch.log(F.sigmoid(anc_embeds.T * pos_embeds))
+        neg_term = neg_beta * torch.log(F.sigmoid(-anc_embeds.T * neg_embeds))
+
+        return pos_term + neg_term
+
+    def _constraint_item_item(self, anc_embeds, pos_embeds):
+        # L_I loss
+        omega = 0
+
+        topk_embeds = pass
+
+        loss = omega * torch.log(F.sigmoid(anc_embeds.T * topk_embeds))
+        return loss
+
+    def _optimization(self, anc_embeds, pos_embeds, neg_embeds):
+        # L_O loss
+        pos_term = -torch.log(F.sigmoid(+anc_embeds.T * pos_embeds)).sum()
+        neg_term = -torch.log(F.sigmoid(-anc_embeds.T * neg_embeds)).sum()
+        return pos_term + neg_term
+
+    def __call__(self, model, batch_data):
+        ancs, poss, negs = batch_data
+        user_embeds, item_embeds = model.forward()
+
+        anc_embeds, pos_embeds, neg_embeds = user_embeds[ancs], item_embeds[poss], item_embeds[negs]
+
+        constraint_user_item_loss = self._constraint_user_item(anc_embeds, pos_embeds, neg_embeds)
+        constraint_item_item_loss = self._constraint_item_item(anc_embeds, pos_embeds)
+        optimization_loss = self._optimization(anc_embeds, pos_embeds, neg_embeds)
+
+        loss = constraint_item_item_loss + constraint_user_item_loss + optimization_loss
+        losses = {
+            'user_item': constraint_user_item_loss,
+            'item_item': constraint_item_item_loss,
+            'optimization': optimization_loss
+        }
+        return loss, losses
