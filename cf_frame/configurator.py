@@ -39,10 +39,20 @@ def configurate(explicit_args):
     parser.add_argument('--embed_dim',    type=int)
     parser.add_argument('--layer_num',    type=int)
     parser.add_argument('--keep_rate',    type=float)
-    parser.add_argument('--gamma',        type=float, help='[DirectAU] weight of uniformity loss')
+    # parser.add_argument('--gamma',        type=float, help='[DirectAU] weight of uniformity loss')
 
+    ### UltraGCN
+    parser.add_argument('--w1',    type=float)
+    parser.add_argument('--w2',    type=float)
+    parser.add_argument('--w3',    type=float)
+    parser.add_argument('--w4',    type=float)
     
-    
+    parser.add_argument('--negative_num',    type=int)
+    parser.add_argument('--negative_weight',    type=int)
+    parser.add_argument('--gamma',    type=float, help='[UltraGCN] loss')
+    parser.add_argument('--lambda_',    type=float)
+    parser.add_argument('--sampling_sift_pos',    type=bool)
+
     args = parser.parse_args(explicit_args)
     
     # Use default values if args are not given

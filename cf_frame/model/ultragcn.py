@@ -10,7 +10,8 @@ uniformInit = nn.init.uniform
 
 # It is equal to MF.
 class UltraGCN(BaseModel):
-    def __init__(self):
+    def __init__(self, data_handler):
+        super().__init__()
         self.embed_dim = args.embed_dim
         self.user_embeds = nn.Parameter(init(torch.empty(self.user_num, self.embed_dim)))
         self.item_embeds = nn.Parameter(init(torch.empty(self.item_num, self.embed_dim)))

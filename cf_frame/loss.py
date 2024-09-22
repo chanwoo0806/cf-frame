@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from cf_frame.util import pload, pstore
 from cf_frame.configurator import args
 
 
@@ -57,9 +58,9 @@ class DirectAU:
 # Infinite Layer Skip for UltraGCN
 class LayerSkipLoss:
     def __init__(self):
-        self.user_num = args.user_num
-        self.item_num = args.item_num
-        self.embedding_dim = args.embed_dim
+        # self.user_num = args.user_num
+        # self.item_num = args.item_num
+        # self.embedding_dim = args.embed_dim
         self.w1 = args.w1
         self.w2 = args.w2
         self.w3 = args.w3
@@ -69,35 +70,15 @@ class LayerSkipLoss:
         self.gamma = args.gamma
         self.lambda_ = args.lambda_
 
+        constraint_mat_path = f'./dataset/{args.dataset}/constraint_mat.pkl'
+        ii_constraint_mat_path = f'./dataset/{args.dataset}/ii_constraint_mat.pkl'
+        ii_neighbor_mat_path = f'./dataset/{args.dataset}/ii_neighbor_mat.pkl'
 
-class UltraGCN(nn.Module):
-    def __init__(self, params, constraint_mat, ii_constraint_mat, ii_neighbor_mat):
-        super(UltraGCN, self).__init__()
-        # self.user_num = params['user_num']
-        # self.item_num = params['item_num']
-        # self.embedding_dim = params['embedding_dim']
-        # self.w1 = params['w1']
-        # self.w2 = params['w2']
-        # self.w3 = params['w3']
-        # self.w4 = params['w4']
+        self.constraint_mat = pload(constraint_mat_path)
+        self.ii_constraint_mat = pload(ii_constraint_mat_path)
+        self.ii_neighbor_mat = pload(ii_neighbor_mat_path)
 
-        # self.negative_weight = params['negative_weight']
-        # self.gamma = params['gamma']
-        # self.lambda_ = params['lambda']
-
-        # self.user_embeds = nn.Embedding(self.user_num, self.embedding_dim)
-        # self.item_embeds = nn.Embedding(self.item_num, self.embedding_dim)
-
-        self.constraint_mat = constraint_mat
-        self.ii_constraint_mat = ii_constraint_mat
-        self.ii_neighbor_mat = ii_neighbor_mat
-
-        self.initial_weight = params['initial_weight']
-        self.initial_weights()
-
-    def initial_weights(self):
-        nn.init.normal_(self.user_embeds.weight, std=self.initial_weight)
-        nn.init.normal_(self.item_embeds.weight, std=self.initial_weight)
+        self.type = 'multineg'
 
     def get_omegas(self, users, pos_items, neg_items):
         device = self.get_device()
@@ -117,12 +98,12 @@ class UltraGCN(nn.Module):
 
         weight = torch.cat((pos_weight, neg_weight))
         return weight
-
+    
     def cal_loss_L(self, users, pos_items, neg_items, omega_weight):
         device = self.get_device()
-        user_embeds = self.user_embeds(users)
-        pos_embeds = self.item_embeds(pos_items)
-        neg_embeds = self.item_embeds(neg_items)
+        user_embeds = self.user_embeds[users]
+        pos_embeds = self.item_embeds[pos_items]
+        neg_embeds = self.item_embeds[neg_items]
       
         pos_scores = (user_embeds * pos_embeds).sum(dim=-1) # batch_size
         user_embeds = user_embeds.unsqueeze(1)
@@ -137,38 +118,55 @@ class UltraGCN(nn.Module):
         loss = pos_loss + neg_loss * self.negative_weight
       
         return loss.sum()
-
+    
     def cal_loss_I(self, users, pos_items):
         device = self.get_device()
-        neighbor_embeds = self.item_embeds(self.ii_neighbor_mat[pos_items].to(device))    # len(pos_items) * num_neighbors * dim
+        neighbor_embeds = self.item_embeds[self.ii_neighbor_mat[pos_items].to(device)]    # len(pos_items) * num_neighbors * dim
         sim_scores = self.ii_constraint_mat[pos_items].to(device)     # len(pos_items) * num_neighbors
-        user_embeds = self.user_embeds(users).unsqueeze(1)
+        user_embeds = self.user_embeds[users].unsqueeze(1)
         
         loss = -sim_scores * (user_embeds * neighbor_embeds).sum(dim=-1).sigmoid().log()
       
         # loss = loss.sum(-1)
         return loss.sum()
-
-    def norm_loss(self):
+    
+    def norm_loss(self, model):
         loss = 0.0
-        for parameter in self.parameters():
+        for parameter in model.parameters():
             loss += torch.sum(parameter ** 2)
         return loss / 2
-
-    def forward(self, users, pos_items, neg_items):
-        omega_weight = self.get_omegas(users, pos_items, neg_items)
-        
-        loss = self.cal_loss_L(users, pos_items, neg_items, omega_weight)
-        loss += self.gamma * self.norm_loss()
-        loss += self.lambda_ * self.cal_loss_I(users, pos_items)
-        return loss
-
-    def test_foward(self, users):
-        items = torch.arange(self.item_num).to(users.device)
-        user_embeds = self.user_embeds(users)
-        item_embeds = self.item_embeds(items)
-         
-        return user_embeds.mm(item_embeds.t())
-
+    
     def get_device(self):
-        return self.user_embeds.weight.device
+        # return self.user_embeds.weight.device
+        return args.device
+    
+    # def forward(self, users, pos_items, neg_items):
+    #     omega_weight = self.get_omegas(users, pos_items, neg_items)
+        
+    #     loss = self.cal_loss_L(users, pos_items, neg_items, omega_weight)
+    #     loss += self.gamma * self.norm_loss()
+    #     loss += self.lambda_ * self.cal_loss_I(users, pos_items)
+    #     return loss
+
+    # def test_foward(self, users):
+    #     items = torch.arange(self.item_num).to(users.device)
+    #     user_embeds = self.user_embeds(users)
+    #     item_embeds = self.item_embeds(items)
+         
+    #     return user_embeds.mm(item_embeds.t())
+    
+    def __call__(self, model, batch_data):
+        users, pos_items, neg_items = batch_data
+        self.user_embeds, self.item_embeds = model.forward()
+        omega_weight = self.get_omegas(users, pos_items, neg_items)
+
+        loss = 0
+        loss_L = self.cal_loss_L(users, pos_items, neg_items, omega_weight)
+        loss_norm = self.norm_loss(model)
+        loss_I = self.cal_loss_I(users, pos_items)
+
+        loss = loss_L + self.gamma * loss_norm + self.lambda_ * loss_I
+        losses = {
+            'loss': loss, 'loss_I': loss_I, 'loss_L': loss_L, 'loss_norm': loss_norm
+        }
+        return loss, losses
