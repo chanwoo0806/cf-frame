@@ -59,9 +59,6 @@ class DirectAU:
 # Infinite Layer Skip for UltraGCN
 class LayerSkipLoss:
     def __init__(self):
-        # self.user_num = args.user_num
-        # self.item_num = args.item_num
-        # self.embedding_dim = args.embed_dim
         self.w1 = args.w1
         self.w2 = args.w2
         self.w3 = args.w3
@@ -125,10 +122,7 @@ class LayerSkipLoss:
         neighbor_embeds = self.item_embeds[self.ii_neighbor_mat[pos_items].to(device)]    # len(pos_items) * num_neighbors * dim
         sim_scores = self.ii_constraint_mat[pos_items].to(device)     # len(pos_items) * num_neighbors
         user_embeds = self.user_embeds[users].unsqueeze(1)
-        
         loss = -sim_scores * (user_embeds * neighbor_embeds).sum(dim=-1).sigmoid().log()
-      
-        # loss = loss.sum(-1)
         return loss.sum()
     
     def norm_loss(self, model):
@@ -138,23 +132,7 @@ class LayerSkipLoss:
         return loss / 2
     
     def get_device(self):
-        # return self.user_embeds.weight.device
         return args.device
-    
-    # def forward(self, users, pos_items, neg_items):
-    #     omega_weight = self.get_omegas(users, pos_items, neg_items)
-        
-    #     loss = self.cal_loss_L(users, pos_items, neg_items, omega_weight)
-    #     loss += self.gamma * self.norm_loss()
-    #     loss += self.lambda_ * self.cal_loss_I(users, pos_items)
-    #     return loss
-
-    # def test_foward(self, users):
-    #     items = torch.arange(self.item_num).to(users.device)
-    #     user_embeds = self.user_embeds(users)
-    #     item_embeds = self.item_embeds(items)
-         
-    #     return user_embeds.mm(item_embeds.t())
     
     def __call__(self, model, batch_data):
         users, pos_items, neg_items = batch_data
@@ -170,6 +148,7 @@ class LayerSkipLoss:
         losses = {
             'loss': loss, 'loss_I': loss_I, 'loss_L': loss_L, 'loss_norm': loss_norm
         }
+        return loss, losses
     
 
 # Cosine Contrastive Loss
@@ -200,6 +179,12 @@ class CCL:
     #         l2_loss += torch.sum(embed.pow(2))
     #     return l2_loss
 
+    def _l2_regularization(self, model):
+        loss = 0.0
+        for parameter in model.parameters():
+            loss += torch.sum(parameter ** 2)
+        return loss / 2
+
     def __call__(self, model, batch_data):
         ancs, poss, negs = batch_data
         user_embeds, item_embeds = model.forward()
@@ -210,9 +195,10 @@ class CCL:
 
         pos_loss = self._positive_loss(anc_embeds, pos_embeds)
         neg_loss = self._negative_loss(anc_embeds, neg_embeds)
-        reg_loss = self._l2_regularization(anc_embeds, pos_embeds, neg_embeds)
+        reg_loss = self._l2_regularization(model)
 
-        loss = pos_loss + neg_loss #+ self.embed_reg * reg_loss
+        loss = pos_loss + neg_loss + self.embed_reg * reg_loss
 
         losses = {'ccl': loss, 'pos': pos_loss, 'neg': neg_loss, 'reg': reg_loss}        
         return loss, losses
+    

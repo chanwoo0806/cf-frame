@@ -53,13 +53,8 @@ class SimpleX(BaseModel):
         # self.adj = data_handler.torch_adj
         self.dropout = nn.Dropout(self.dropout)
         self.is_training = True
-        self.final_user_embeds = None
-        self.final_item_embeds = None
     
     def forward(self):
-        if not self.is_training and self.final_user_embeds is not None and self.final_item_embeds is not None:
-            return self.final_user_embeds, self.final_item_embeds
-
         # user_interacted = b x seq_len x embedding_dim
         interacted_embeds = self.item_embeds[self.interacted]
         mask = (self.interacted == -1)
@@ -72,10 +67,8 @@ class SimpleX(BaseModel):
 
         if self.score == 'cosine':
             aggregated_user_embeds = F.normalize(aggregated_user_embeds)
-            self.item_embeds = torch.nn.Parameter(F.normalize(self.item_embeds), requires_grad=True)
-
-        self.final_user_embeds = aggregated_user_embeds
-        self.final_item_embeds = self.item_embeds
+            self.item_embeds = F.normalize(self.item_embeds)
+            # self.item_embeds = torch.nn.Parameter(F.normalize(self.item_embeds), requires_grad=True)
 
         return aggregated_user_embeds, self.item_embeds
         
