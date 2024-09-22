@@ -1,0 +1,46 @@
+# Basic
+rand_seed: 2024
+dataset: yelp2018
+epoch: 1500
+trn_batch: 2048
+tensorboard: 1
+
+# Early-stop
+tst_step: 5
+patience: 10
+criterion: [1, 1]
+
+# Test
+metrics: [recall, ndcg]
+ks: [10, 20, 50]
+tst_batch: 1024
+
+# Tunable
+embed_reg: 1.0e-4
+lr: 1.0e-3
+
+# Develop (General)
+comment: ultragcn-reprod
+summary: ultragcn
+model: ultragcn
+loss: layerskiploss
+
+# Multiple Negative Sampling
+#L = -(w1 + w2*\beta)) * log(sigmoid(e_u e_i)) - \sum_{N-} (w3 + w4*\beta) * log(sigmoid(e_u e_i'))
+embed_dim: 64
+
+w1: 1.0e-8
+w2: 1.0
+w3: 1.0e-8
+w4: 1.0
+
+negative_num: 800
+negative_weight: 300
+
+#weight of l2 normalization
+gamma: 1.0e-4 
+#weight of L_I
+lambda_: 5.0e-4
+
+#whether to sift the pos item when doing negative sampling
+sampling_sift_pos: False

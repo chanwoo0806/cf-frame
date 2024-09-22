@@ -2,3 +2,5 @@ __pycache__/
 log/
 test.py
 test.ipynb
+ultragcn_official.py
+.DS_Store
