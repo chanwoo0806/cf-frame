@@ -51,6 +51,49 @@ class AllRankTstData(data.Dataset):
         pck_mask = np.reshape(pck_mask, [-1])
         return pck_user, pck_mask
 
+class MultiNegTrnData(data.Dataset):
+    def __init__(self, coomat):
+        self.rows = coomat.row
+        self.cols = coomat.col
+        self.dokmat = coomat.todok()
+        self.negs = None
+
+        interacted_items = [list() for i in range(coomat.shape[0])]
+        for i in range(len(coomat.data)):
+            row = coomat.row[i]
+            col = coomat.col[i]
+            interacted_items[row].append(col)
+        self.interacted_items = interacted_items
+
+    def sample_negs(self):
+        item_num = args.item_num  # Dataset에 의해서 알아서 결정됨
+        neg_ratio = args.negative_num  # Number of negative samples for each user, pos pairs.
+        sampling_sift_pos = args.sampling_sift_pos  # True -> 이미 상호작용한 아이템을 Negative samping에서 제외
+        interacted_items = self.interacted_items
+        neg_candidates = np.arange(item_num)
+        
+        if sampling_sift_pos:
+            neg_items = []
+            for u in self.rows:
+                probs = np.ones(item_num)
+                probs[interacted_items[u]] = 0
+                probs /= np.sum(probs)
+                u_neg_items = np.random.choice(neg_candidates, size = neg_ratio, p = probs, replace = True).reshape(1, -1)
+                neg_items.append(u_neg_items)
+            neg_items = np.concatenate(neg_items, axis = 0) 
+        else:
+            neg_items = np.random.choice(neg_candidates, (len(self.rows), neg_ratio), replace = True)
+        self.negs = torch.from_numpy(neg_items)
+        print(self.negs.shape)
+        assert self.negs.shape[0] == len(self.rows)
+        assert self.negs.shape[1] == neg_ratio
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, idx):
+        return self.rows[idx], self.cols[idx], self.negs[idx]
+
 class DataHandler:
     def __init__(self, loss_type):
         predir = f'./dataset/{args.dataset}/'
@@ -117,8 +160,10 @@ class DataHandler:
         # Load dataset
         if self.loss_type == 'pairwise':
             trn_data = PairwiseTrnData(trn_mat)
-        # elif self.loss_type == 'pointwise':
-        # 	trn_data = PointwiseTrnData(trn_mat)
+        elif self.loss_type == 'multineg':
+            trn_data = MultiNegTrnData(trn_mat)
+        else:
+            raise NotImplementedError
         val_data = AllRankTstData(val_mat, trn_mat)
         tst_data = AllRankTstData(tst_mat, trn_mat)
         
