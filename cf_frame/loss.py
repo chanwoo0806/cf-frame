@@ -28,6 +28,7 @@ class BPR:
         losses = {'bpr_loss': bpr_loss, 'reg_loss': reg_loss}
         return loss, losses
     
+
 class DirectAU:
     def __init__(self):
         self.gamma = args.gamma
@@ -169,4 +170,49 @@ class LayerSkipLoss:
         losses = {
             'loss': loss, 'loss_I': loss_I, 'loss_L': loss_L, 'loss_norm': loss_norm
         }
+    
+
+# Cosine Contrastive Loss
+class CCL:
+    def __init__(self):
+        self.neg_weight = args.neg_weight
+        self.margin = args.margin
+        self.embed_reg = args.embed_reg
+        self.type = 'multineg'
+
+    def _positive_loss(self, user_embeds, pos_embeds):
+        pos_score = F.cosine_similarity(user_embeds, pos_embeds)
+        pos_loss = (1 - pos_score).mean()
+        return pos_loss
+
+    def _negative_loss(self, user_embeds, neg_embeds):
+        neg_loss = 0
+        neg_num = args.neg_num
+        for i in range(neg_num):
+            neg_score = F.cosine_similarity(user_embeds, neg_embeds[:, :, i])
+            neg_loss += torch.clip(neg_score - self.margin, min=0)
+        neg_loss = (self.neg_weight / neg_num) * neg_loss.mean()
+        return neg_loss
+    
+    # def _l2_regularization(self, *embeds):
+    #     l2_loss = 0
+    #     for embed in embeds:
+    #         l2_loss += torch.sum(embed.pow(2))
+    #     return l2_loss
+
+    def __call__(self, model, batch_data):
+        ancs, poss, negs = batch_data
+        user_embeds, item_embeds = model.forward()
+        
+        anc_embeds = user_embeds[ancs]
+        pos_embeds = item_embeds[poss]
+        neg_embeds = item_embeds[negs].permute(dims=(0, 2, 1))  # Batch x Dimension x Negative
+
+        pos_loss = self._positive_loss(anc_embeds, pos_embeds)
+        neg_loss = self._negative_loss(anc_embeds, neg_embeds)
+        reg_loss = self._l2_regularization(anc_embeds, pos_embeds, neg_embeds)
+
+        loss = pos_loss + neg_loss #+ self.embed_reg * reg_loss
+
+        losses = {'ccl': loss, 'pos': pos_loss, 'neg': neg_loss, 'reg': reg_loss}        
         return loss, losses

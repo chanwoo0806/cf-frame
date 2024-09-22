@@ -53,6 +53,17 @@ def configurate(explicit_args):
     parser.add_argument('--lambda_',    type=float)
     parser.add_argument('--sampling_sift_pos',    type=bool)
 
+    ### SimpleX
+    parser.add_argument('--neg_num',      type=int, help='The number of negative sampling in `MultiNegTrnData`.')
+    parser.add_argument('--score',        type=str, help='Possible: [cosine, dot]')
+    parser.add_argument('--aggregator',        type=str, help='Possible: [mean, user_attention, self_attention]')
+    parser.add_argument('--fusing_weight',     type=float)
+    parser.add_argument('--attention_dropout', type=float)
+    parser.add_argument('--history_num',  type=int)
+    parser.add_argument('--dropout',      type=int)
+    parser.add_argument('--neg_weight',   type=float)
+    parser.add_argument('--margin', type=float)
+
     args = parser.parse_args(explicit_args)
     
     # Use default values if args are not given
