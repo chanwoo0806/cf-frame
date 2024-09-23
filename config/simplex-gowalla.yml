@@ -1,0 +1,46 @@
+####### Basic #######
+tensorboard: 1
+rand_seed: 2024
+dataset: yelp2018
+#####################
+
+####### Model #######
+comment: simplex-gowalla
+summary: simplex-gowalla
+model: simplex
+loss: ccl
+#####################
+
+####### Train #######
+trn_batch: 256
+epoch: 2000
+embed_dim: 64
+lr: 1.0e-4
+dropout: 0.1
+#####################
+
+####### Eval ########
+metrics: [recall, ndcg]
+ks: [10, 20]
+criterion: [1, 1]  # Early-Stop
+tst_step: 5
+patience: 10
+tst_batch: 2048
+#####################
+
+##### Specific ######
+# Data
+negative_num: 2000
+
+# Loss
+margin: 0.9
+neg_weight: 250
+embed_reg: 1.0e-7
+
+# Model
+score: 'cosine'
+aggregator: 'user_attention'
+fusing_weight: 0.8
+attention_dropout: 0.0
+history_num: 10
+#####################
