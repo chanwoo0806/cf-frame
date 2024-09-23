@@ -24,9 +24,9 @@ class SimpleX(BaseModel):
         self.history_num       = args.history_num
 
         # Model
-        self.embed_dim  = args.embed_dim
-        self.score      = args.score
-        self.dropout    = args.dropout
+        self.embed_dim    = args.embed_dim
+        self.score        = args.score
+        self.dropout_rate = args.dropout
 
         # Interacted Items
         list_interacted = data_handler.train_dataloader.dataset.all_pos
@@ -49,26 +49,17 @@ class SimpleX(BaseModel):
 
         self.user_embeds = nn.Parameter(init(torch.empty(self.user_num, self.embed_dim)))
         self.item_embeds = nn.Parameter(init(torch.empty(self.item_num, self.embed_dim)))
-
-        # self.adj = data_handler.torch_adj
-        self.dropout = nn.Dropout(self.dropout)
-        self.is_training = True
+        self.dropout = nn.Dropout(self.dropout_rate)
     
     def forward(self):
         # user_interacted = b x seq_len x embedding_dim
         interacted_embeds = self.item_embeds[self.interacted]
         mask = (self.interacted == -1)
         interacted_embeds[mask] = 0
-
         aggregated_user_embeds = self.behavior_aggregation(self.user_embeds, interacted_embeds)
 
-        if self.is_training:
+        if self.training:
             aggregated_user_embeds = self.dropout(aggregated_user_embeds)
-
-        if self.score == 'cosine':
-            aggregated_user_embeds = F.normalize(aggregated_user_embeds)
-            self.item_embeds = F.normalize(self.item_embeds)
-            # self.item_embeds = torch.nn.Parameter(F.normalize(self.item_embeds), requires_grad=True)
 
         return aggregated_user_embeds, self.item_embeds
         
@@ -77,7 +68,9 @@ class SimpleX(BaseModel):
         if self.training:
             raise Exception('full_predict should be called in eval mode')
         user_embeds, item_embeds = self.forward()
-        self.is_training = False
+        if self.score == 'cosine':
+            user_embeds = F.normalize(user_embeds)
+            item_embeds = F.normalize(item_embeds)
         pck_users, train_mask = batch_data
         pck_users = pck_users.long()
         pck_user_embeds = user_embeds[pck_users]
