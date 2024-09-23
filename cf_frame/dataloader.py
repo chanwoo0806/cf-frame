@@ -104,9 +104,10 @@ class MultiNegTrnData_CPP(data.Dataset):
         self.rows = coomat.row
         self.cols = coomat.col
         self.dokmat = coomat.todok()
-        self.negs = None
-
-        interacted_items = [list() for i in range(coomat.shape[0])]
+        self.neg_num = args.negative_num
+        self.user_num = args.user_num
+        self.item_num = args.item_num
+        interacted_items = [list() for _ in range(coomat.shape[0])]
         for i in range(len(coomat.data)):
             row = coomat.row[i]
             col = coomat.col[i]
@@ -117,12 +118,12 @@ class MultiNegTrnData_CPP(data.Dataset):
         self.result = sampling.sample_negative_ByUser(
             self.rows,
             self.item_num,
-            self.all_pos,
+            self.interacted_items,
             self.neg_num
         )
 
     def __len__(self):
-        return self.interaction_num
+        return len(self.rows)
 
     def __getitem__(self, idx):
         return self.result[idx, 0], self.result[idx, 1], self.result[idx, 2:]
@@ -196,6 +197,8 @@ class DataHandler:
             trn_data = PairwiseTrnData(trn_mat)
         elif self.loss_type == 'multineg':
             trn_data = MultiNegTrnData(trn_mat)
+        elif self.loss_type == 'multineg_cpp':
+            trn_data = MultiNegTrnData_CPP(trn_mat)
         else:
             raise NotImplementedError
         val_data = AllRankTstData(val_mat, trn_mat)
