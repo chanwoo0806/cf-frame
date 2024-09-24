@@ -164,19 +164,11 @@ class CCL:
         pos_loss = (1 - pos_score).mean()
         return pos_loss
 
-    # def _negative_loss(self, user_embeds, neg_embeds):
-    #     neg_loss = 0
-    #     neg_num = args.neg_num
-    #     for i in range(neg_num):
-    #         neg_score = F.cosine_similarity(user_embeds, neg_embeds[:, :, i])
-    #         neg_loss += torch.clip(neg_score - self.margin, min=0)
-    #     neg_loss = (self.neg_weight / neg_num) * neg_loss.mean()
-    #     return neg_loss
-    
     def _negative_loss(self, user_embeds, neg_embeds):
-        neg_scores = F.cosine_similarity(user_embeds.unsqueeze(1), neg_embeds, dim=-1)
+        expanded_user_embeds = user_embeds.unsqueeze(-1).repeat(1, 1, args.negative_num)
+        neg_scores = F.cosine_similarity(expanded_user_embeds, neg_embeds, dim=1)
         neg_loss = torch.clip(neg_scores - self.margin, min=0)
-        neg_loss = (self.neg_weight / args.neg_num) * neg_loss.mean()
+        neg_loss = (self.neg_weight / args.negative_num) * neg_loss.mean()
         return neg_loss
     
     def _l2_regularization(self, model):

@@ -29,7 +29,7 @@ class SimpleX(BaseModel):
         self.dropout_rate = args.dropout
 
         # Interacted Items
-        list_interacted = data_handler.train_dataloader.dataset.all_pos
+        list_interacted = data_handler.train_dataloader.dataset.interacted_items
         processed = []
         for items in list_interacted:
             n_items = len(items)
