@@ -7,7 +7,7 @@ def configurate(explicit_args):
     parser = argparse.ArgumentParser()
     
     ### Basic
-    parser.add_argument('--defaults',     type=str, default='./config/defaults.yml')
+    parser.add_argument('--defaults',     type=str, default='defaults')
     parser.add_argument('--rand_seed',    type=int)
     parser.add_argument('--dataset',      type=str)
     parser.add_argument('--epoch',        type=int)
@@ -69,7 +69,7 @@ def configurate(explicit_args):
     args = parser.parse_args(explicit_args)
     
     # Use default values if args are not given
-    with open(args.defaults, mode='r', encoding='utf-8') as f:
+    with open(f'./config/{args.defaults}.yml', mode='r', encoding='utf-8') as f:
         defaults = yaml.safe_load(f.read())
     for arg, value in args.__dict__.items():
         if (value is None) and (arg in defaults):
