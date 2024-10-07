@@ -40,6 +40,8 @@ def configurate(explicit_args):
     parser.add_argument('--layer_num',    type=int)
     parser.add_argument('--keep_rate',    type=float)
     # parser.add_argument('--gamma',        type=float, help='[DirectAU] weight of uniformity loss')
+    ### DirectAU
+    parser.add_argument('--uniform',        type=float, help='[DirectAU] weight of uniformity loss')
 
     ### UltraGCN
     parser.add_argument('--w1',    type=float)

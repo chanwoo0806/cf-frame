@@ -31,7 +31,7 @@ class BPR:
 
 class DirectAU:
     def __init__(self):
-        self.gamma = args.gamma
+        self.gamma = args.uniform
         self.type = 'pairwise' # actually, it's pointwise
         
     def _alignment(self, x, y, alpha=2):
