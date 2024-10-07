@@ -15,12 +15,13 @@ class PairwiseTrnData(data.Dataset):
         self.cols = coomat.col
         self.dokmat = coomat.todok()
         self.negs = np.zeros(len(self.rows)).astype(np.int32)
+        self.item_num = coomat.shape[1]
     
     def sample_negs(self):
         for i in range(len(self.rows)):
             u = self.rows[i]
             while True:
-                iNeg = np.random.randint(args.item_num)
+                iNeg = np.random.randint(self.item_num)
                 if (u, iNeg) not in self.dokmat:
                     break
             self.negs[i] = iNeg
@@ -61,6 +62,7 @@ class MultiNegTrnData(data.Dataset):
         self.cols = coomat.col
         self.dokmat = coomat.todok()
         self.negs = None
+        self.item_num = coomat.shape[1]
 
         interacted_items = [list() for i in range(coomat.shape[0])]
         for i in range(len(coomat.data)):
@@ -70,7 +72,7 @@ class MultiNegTrnData(data.Dataset):
         self.interacted_items = interacted_items
 
     def sample_negs(self):
-        item_num = args.item_num  # Dataset에 의해서 알아서 결정됨
+        item_num = self.item_num  # Dataset에 의해서 알아서 결정됨
         neg_ratio = args.negative_num  # Number of negative samples for each user, pos pairs.
         sampling_sift_pos = args.sampling_sift_pos  # True -> 이미 상호작용한 아이템을 Negative samping에서 제외
         interacted_items = self.interacted_items
@@ -105,8 +107,7 @@ class MultiNegTrnData_CPP(data.Dataset):
         self.cols = coomat.col
         self.dokmat = coomat.todok()
         self.neg_num = args.negative_num
-        self.user_num = args.user_num
-        self.item_num = args.item_num
+        self.user_num, self.item_num = coomat.shape
         interacted_items = [list() for _ in range(coomat.shape[0])]
         for i in range(len(coomat.data)):
             row = coomat.row[i]
@@ -171,8 +172,8 @@ class DataHandler:
         Returns:
             torch.sparse.FloatTensor: the bi-directional matrix
         """
-        a = csr_matrix((args.user_num, args.user_num))
-        b = csr_matrix((args.item_num, args.item_num))
+        a = csr_matrix((self.user_num, self.user_num))
+        b = csr_matrix((self.item_num, self.item_num))
         mat = sp.vstack([sp.hstack([a, mat]), sp.hstack([mat.transpose(), b])])
         mat = (mat != 0) * 1.0
         # mat = (mat + sp.eye(mat.shape[0])) * 1.0 # self-connection
@@ -189,7 +190,7 @@ class DataHandler:
         tst_mat = self._load_one_mat(self.tst_file)
         val_mat = self._load_one_mat(self.val_file) if os.path.exists(self.val_file) else tst_mat
         self.trn_mat = trn_mat
-        args.user_num, args.item_num = trn_mat.shape # set user_num and item_num
+        self.user_num, self.item_num = trn_mat.shape        
         self.torch_adj = self._make_torch_adj(trn_mat)
         
         # Load dataset

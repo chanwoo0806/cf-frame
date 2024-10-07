@@ -1,14 +1,13 @@
 from torch import nn
-from cf_frame.configurator import args
 
 class BaseModel(nn.Module):
-    def __init__(self):
+    def __init__(self, data_handler):
         super().__init__()
         # put data_handler.xx you need into self.xx
         # put hyperparams you need into self.xx
         # initialize parameters
-        self.user_num = args.user_num
-        self.item_num = args.item_num
+        self.user_num = data_handler.user_num
+        self.item_num = data_handler.item_num
     
     def forward(self):
         """return final embeddings for all users and items

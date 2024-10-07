@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from cf_frame.model import BaseModel
-from cf_frame.module import EdgeDrop
 from cf_frame.configurator import args
 
 init = nn.init.xavier_uniform_
@@ -11,7 +10,7 @@ uniformInit = nn.init.uniform
 # It is equal to MF.
 class UltraGCN(BaseModel):
     def __init__(self, data_handler):
-        super().__init__()
+        super().__init__(data_handler)
         self.embed_dim = args.embed_dim
         self.user_embeds = nn.Parameter(init(torch.empty(self.user_num, self.embed_dim)))
         self.item_embeds = nn.Parameter(init(torch.empty(self.item_num, self.embed_dim)))
