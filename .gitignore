@@ -1,6 +1,6 @@
 __pycache__/
 log/
-test.py
-test.ipynb
+test/
 ultragcn_official.py
 .DS_Store
+*.sh
