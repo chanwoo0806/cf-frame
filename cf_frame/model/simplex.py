@@ -6,7 +6,6 @@ from torch import nn
 import torch.nn.functional as F
 
 from cf_frame.model import BaseModel
-from cf_frame.module import EdgeDrop
 from cf_frame.configurator import args
 
 
@@ -15,7 +14,7 @@ uniformInit = nn.init.uniform
 
 class SimpleX(BaseModel):
     def __init__(self, data_handler):
-        super(SimpleX, self).__init__()
+        super().__init__(data_handler)
 
         # Aggregation
         self.aggregator        = args.aggregator

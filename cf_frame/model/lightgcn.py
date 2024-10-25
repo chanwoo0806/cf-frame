@@ -9,7 +9,7 @@ uniformInit = nn.init.uniform
 
 class LightGCN(BaseModel):
     def __init__(self, data_handler):
-        super().__init__()
+        super().__init__(data_handler)
 
         self.adj = data_handler.torch_adj
 

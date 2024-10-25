@@ -7,7 +7,7 @@ def configurate(explicit_args):
     parser = argparse.ArgumentParser()
     
     ### Basic
-    parser.add_argument('--defaults',     type=str, default='./config/defaults.yml')
+    parser.add_argument('--default',     type=str, default='default')
     parser.add_argument('--rand_seed',    type=int)
     parser.add_argument('--dataset',      type=str)
     parser.add_argument('--epoch',        type=int)
@@ -69,11 +69,11 @@ def configurate(explicit_args):
     args = parser.parse_args(explicit_args)
     
     # Use default values if args are not given
-    with open(args.defaults, mode='r', encoding='utf-8') as f:
-        defaults = yaml.safe_load(f.read())
+    with open(f'./config/{args.default}.yml', mode='r', encoding='utf-8') as f:
+        default = yaml.safe_load(f.read())
     for arg, value in args.__dict__.items():
-        if (value is None) and (arg in defaults):
-            setattr(args, arg, defaults[arg])
+        if (value is None) and (arg in default):
+            setattr(args, arg, default[arg])
     
     # Convert comma-separated string to list
     def str_to_list(string, elem_type):
