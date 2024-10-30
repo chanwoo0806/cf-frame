@@ -3,7 +3,7 @@ import yaml
 import torch
 import argparse
 
-def configurate(explicit_args):
+def configurate():
     parser = argparse.ArgumentParser()
     
     ### Essential
@@ -68,7 +68,7 @@ def configurate(explicit_args):
     parser.add_argument('--neg_weight', type=float)
     parser.add_argument('--margin', type=float)
 
-    args = parser.parse_args(explicit_args)
+    args = parser.parse_args()
     
     # Use default values if args are not given
     with open(f'./config/{args.default}.yml', mode='r', encoding='utf-8') as f:
@@ -92,13 +92,9 @@ def configurate(explicit_args):
     
     return args
 
-EXPLICIT = False # True if you want to give arguments without using command line
-explicit_args = [
-    "--comment", "test",
-    "--model", "lightgcn",
-    "--loss", "bpr",
-    "--embed_dim", "64",
-    "--layer_num", "4",
-]
-explicit_args = explicit_args if EXPLICIT else None
-args = configurate(explicit_args)
+args = configurate()
+
+''' <<< Tip >>> Arguments can be set without using command line (in case of Jupyter Notebook).
+import sys
+sys.argv = ['configurator.py', '--comment', 'jupyter', '--dataset', 'gowalla']
+'''
