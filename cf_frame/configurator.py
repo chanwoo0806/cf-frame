@@ -44,8 +44,8 @@ def configurate():
     parser.add_argument('--embed_reg', type=float, help='L2 regularization for embeddings')
     parser.add_argument('--uniform', type=float, help='[DirectAU] weight of uniformity loss')
     
-    ### GFCF
-    parser.add_argument('--ideal', type=float, help='[GFCF] weight of ideal low-pass filter')
+    ### GFCF & PGSP
+    parser.add_argument('--ideal', type=float, help='weight of ideal low-pass filter')
 
     ### UltraGCN
     parser.add_argument('--w1', type=float)
