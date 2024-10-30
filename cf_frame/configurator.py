@@ -17,6 +17,7 @@ def configurate():
     parser.add_argument('--default', type=str, default='default')
     parser.add_argument('--rand_seed', type=int)
     parser.add_argument('--summary', type=str)
+    parser.add_argument('--folder', type=str)
     
     ### Train
     parser.add_argument('--epoch', type=int)
@@ -88,7 +89,8 @@ def configurate():
     
     # Automatically set args
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    args.path = f'./log/{time.strftime("%m%d-%H:%M:%S")}-{args.comment}'
+    args.path = f'./log/' if args.folder is None else f'./log/{args.folder}/'
+    args.path += f'{time.strftime("%m%d-%H:%M:%S")}-{args.comment}'
     
     return args
 
