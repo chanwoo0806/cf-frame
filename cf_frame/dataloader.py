@@ -200,12 +200,14 @@ class DataHandler:
             trn_data = MultiNegTrnData(trn_mat)
         elif self.loss_type == 'multineg_cpp':
             trn_data = MultiNegTrnData_CPP(trn_mat)
+        elif self.loss_type == 'nonparam':
+            pass
         else:
             raise NotImplementedError
         val_data = AllRankTstData(val_mat, trn_mat)
         tst_data = AllRankTstData(tst_mat, trn_mat)
         
         # Set dataloader
-        self.train_dataloader = data.DataLoader(trn_data, batch_size=args.trn_batch, shuffle=True, num_workers=0)
+        self.train_dataloader = data.DataLoader(trn_data, batch_size=args.trn_batch, shuffle=True, num_workers=0) if self.loss_type != 'nonparam' else None
         self.valid_dataloader = data.DataLoader(val_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
         self.test_dataloader  = data.DataLoader(tst_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
