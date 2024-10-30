@@ -1,0 +1,12 @@
+# Basic
+rand_seed: 2024
+tensorboard: 0
+
+# Test
+metrics: [recall, ndcg]
+ks: [10, 20, 50]
+tst_batch: 1024
+
+# Develop (General)
+loss: nonparam
+trainer: nonparam

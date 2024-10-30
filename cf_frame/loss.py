@@ -4,6 +4,11 @@ from cf_frame.util import pload, pstore
 from cf_frame.configurator import args
 
 
+class NonParam:
+    def __init__(self):
+        self.type = 'nonparam'
+
+
 class BPR:
     def __init__(self):
         self.embed_reg = args.embed_reg
