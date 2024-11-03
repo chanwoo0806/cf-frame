@@ -33,6 +33,21 @@ class PairwiseTrnData(data.Dataset):
         return self.rows[idx], self.cols[idx], self.negs[idx]
 
 
+class PointwiseTrnData(data.Dataset):
+    def __init__(self, coomat):
+        self.rows = coomat.row
+        self.cols = coomat.col
+        
+    def sample_negs(self):
+        pass
+    
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, idx):
+        return self.rows[idx], self.cols[idx]
+
+
 class AllRankTstData(data.Dataset):
     def __init__(self, coomat, trn_mat):
         self.csrmat = (trn_mat.tocsr() != 0) * 1.0
@@ -196,6 +211,8 @@ class DataHandler:
         # Load dataset
         if self.loss_type == 'pairwise':
             trn_data = PairwiseTrnData(trn_mat)
+        elif self.loss_type == 'pointwise':
+            trn_data = PointwiseTrnData(trn_mat)
         elif self.loss_type == 'multineg':
             trn_data = MultiNegTrnData(trn_mat)
         elif self.loss_type == 'multineg_cpp':

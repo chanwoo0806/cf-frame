@@ -37,7 +37,7 @@ class BPR:
 class DirectAU:
     def __init__(self):
         self.gamma = args.uniform
-        self.type = 'pairwise' # actually, it's pointwise
+        self.type = 'pointwise'
         
     def _alignment(self, x, y, alpha=2):
         x, y = F.normalize(x, dim=-1), F.normalize(y, dim=-1)
@@ -48,7 +48,7 @@ class DirectAU:
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
     
     def __call__(self, model, batch_data):
-        ancs, poss, _ = batch_data
+        ancs, poss = batch_data
         
         # compute alignment and uniformity loss
         user_embeds, item_embeds = model.forward()
