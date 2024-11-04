@@ -11,7 +11,7 @@ class LightGCN(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
 
-        self.adj = data_handler.torch_adj
+        self.adj = data_handler.get_normalized_adj()
 
         self.embed_dim = args.embed_dim
         self.layer_num = args.layer_num
