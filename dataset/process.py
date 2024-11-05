@@ -1,8 +1,13 @@
+import os
+import time
 import torch
-import numpy as np
-from scipy import sparse as sp
 import pickle
-import os 
+import argparse
+import numpy as np
+from scipy.linalg import svd
+import scipy.sparse as sp
+from scipy.sparse import coo_matrix
+from scipy.sparse.linalg import svds
 
 
 def load_data(train_file, test_file):
@@ -137,7 +142,64 @@ def pstore(x, path):
 	with open(path, 'wb') as f:
 		pickle.dump(x, f)
 	print('store object in path = {} ok'.format(path))
-     
+
+
+def load_inter(dataset):
+    """Load one single adjacent matrix from file
+    Args:
+        file (string): path of the file to load
+    Returns:
+        scipy.sparse.coo_matrix: the loaded adjacent matrix
+    """
+    file = f'./{dataset}/train_mat.pkl'
+    with open(file, 'rb') as fs:
+        inter = (pickle.load(fs) != 0).astype(np.float32)
+    if type(inter) != coo_matrix:
+        inter = coo_matrix(inter)
+    return inter
+
+
+def normalize(inter):
+    user_degree = np.array(inter.sum(axis=1)).flatten() # Du
+    item_degree = np.array(inter.sum(axis=0)).flatten() # Di
+    user_d_inv_sqrt = sp.diags(np.power(user_degree + 1e-10, -0.5)) # Du^(-0.5)
+    item_d_inv_sqrt = sp.diags(np.power(item_degree + 1e-10, -0.5)) # Di^(-0.5)
+    norm_inter = (user_d_inv_sqrt @ inter @ item_d_inv_sqrt)
+    return norm_inter
+
+
+def svd_solver():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str)
+    # full svd on dense matrix
+    parser.add_argument('--full', action='store_true')
+    # truncated svd on sparse matrix
+    parser.add_argument('--cutoff', type=int)
+    parser.add_argument('--rand_seed', type=int, default=2024)
+    
+    args = parser.parse_args()
+    
+    inter = load_inter(args.dataset)
+    norm_inter = normalize(inter)
+    
+    start_time = time.time()
+    print(f">>> Dataset: {args.dataset}")
+    if args.full:
+        print(">>> Full SVD")
+        u, s, vt = svd(norm_inter.todense(), full_matrices=False, lapack_driver='gesvd')
+    else:
+        print(f">>> Truncated SVD - Cutoff: {args.cutoff}, Random seed: {args.rand_seed}")
+        u, s, vt = svds(norm_inter, which='LM', k=args.cutoff, random_state=args.rand_seed)
+    v = vt.T
+    print(f">>> Computation for {(time.time() - start_time)/60:.1f} mins")
+    
+    if not os.path.exists(f'./{args.dataset}/svd'):
+        os.makedirs(f'./{args.dataset}/svd')
+    cutoff = "full" if args.full else args.cutoff
+    np.save(f'./{args.dataset}/svd/u_{cutoff}.npy', u)
+    np.save(f'./{args.dataset}/svd/s_{cutoff}.npy', s)
+    np.save(f'./{args.dataset}/svd/v_{cutoff}.npy', v)
+
 
 def main():
     dataset_names = ['gowalla']
