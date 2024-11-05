@@ -69,6 +69,13 @@ def configurate():
     parser.add_argument('--neg_weight', type=float)
     parser.add_argument('--margin', type=float)
 
+    ### GSP components analysis
+    parser.add_argument('--normalize', type=int)
+    parser.add_argument('--coeffs', type=str) # Poly
+    parser.add_argument('--freq_num', type=int) # Cutoff
+    parser.add_argument('--filter', type=str) # Cutoff
+    parser.add_argument('--hyp', type=float) # Cutoff
+    
     args = parser.parse_args()
     
     # Use default values if args are not given
@@ -86,6 +93,7 @@ def configurate():
     args.metrics = str_to_list(args.metrics, str) if is_str(args.metrics) else args.metrics
     args.ks = str_to_list(args.ks, int) if is_str(args.ks) else args.ks
     args.criterion = str_to_list(args.criterion, int) if is_str(args.criterion) else args.criterion
+    args.coeffs = str_to_list(args.coeffs, float) if is_str(args.coeffs) else args.coeffs
     
     # Automatically set args
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
