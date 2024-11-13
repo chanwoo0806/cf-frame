@@ -1,0 +1,36 @@
+#!/bin/bash
+
+datasets=("yelp2018")
+
+freq_nums=(2 16 64 128 256 512 1024 2048 4096 6144 8192 10240)
+
+# Use only 1 or 2 of 3.
+# params_a=(1.0 0.0 0.0 0.8 0.6 0.5 0.4 0.2 0.8 0.6 0.5 0.4 0.2 0.0 0.0 0.0 0.0 0.0)
+# params_b=(0.0 1.0 0.0 0.2 0.4 0.5 0.6 0.8 0.0 0.0 0.0 0.0 0.0 0.8 0.6 0.5 0.4 0.2)
+# params_c=(0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.2 0.4 0.5 0.6 0.8 0.2 0.4 0.5 0.6 0.8)
+
+# Use 3 of 3.
+params_a=(0.2 0.2 0.6 0.3 0.3 0.4 0.2 0.2 0.3 0.3 0.5 0.5)
+params_b=(0.2 0.6 0.2 0.3 0.4 0.3 0.3 0.5 0.2 0.5 0.2 0.3)
+params_c=(0.6 0.2 0.2 0.4 0.3 0.3 0.5 0.3 0.5 0.2 0.3 0.2)
+
+# evenpoly
+for dataset in "${datasets[@]}"; do
+    for freq_num in "${freq_nums[@]}"; do
+        for i in "${!params_a[@]}"; do
+            python main.py \
+            --default nonparam \
+            --model gsp_cutoff_my \
+            --normalize 1 \
+            --dataset "$dataset" \
+            --freq_num "$freq_num" \
+            --filter "evenpoly" \
+            --a "${params_a[i]}" \
+            --b "${params_b[i]}" \
+            --c "${params_c[i]}" \
+            --folder gsp_cutoff \
+            --summary "poly-cutoff-${dataset}" \
+            --comment "${dataset},${freq_num},${params_a[i]},${params_b[i]},${params_c[i]}"
+        done
+    done
+done
