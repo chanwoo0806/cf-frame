@@ -8,33 +8,28 @@ from cf_frame.configurator import args
 class GSP_Norm(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
-        self.inter = data_handler.trn_mat # R (scipy-coo)
-        # self.beta = 0.5
-        # self.cutoff = 512
+        self.inter = data_handler.trn_mat  # R (scipy-coo)
+        self.a = args.a
+        self.b = args.b
+        self.c = args.c
+        self.set_filter()
         
     def set_filter(self):
-        user_degree = np.array(self.inter.sum(axis=1)).flatten() # Du
-        item_degree = np.array(self.inter.sum(axis=0)).flatten() # Di
-        self.user_d_inv = sp.diags(np.power(user_degree + 1e-10, -1)) # Du^(-1)
-        self.item_d_inv = sp.diags(np.power(item_degree + 1e-10, -1)) # Di^(-1)
-        self.user_d_inv_sqrt = sp.diags(np.power(user_degree + 1e-10, -0.5)) # Du^(-0.5)
-        self.item_d_inv_sqrt = sp.diags(np.power(item_degree + 1e-10, -0.5)) # Di^(-0.5)
+        user_degree = np.array(self.inter.sum(axis=1)).flatten()  # Du
+        item_degree = np.array(self.inter.sum(axis=0)).flatten()  # Di
         
+        self.user_deg_a = sp.diags(np.power(user_degree + 1e-10, -self.a))  # Du^(-a)
+        self.item_deg_a = sp.diags(np.power(item_degree + 1e-10, -self.a))  # Di^(-a)
+
+        self.user_deg_b = sp.diags(np.power(user_degree + 1e-10, -self.b))  # Du^(-b)
+        self.item_deg_b = sp.diags(np.power(item_degree + 1e-10, -self.b))  # Di^(-b)
+
+        self.user_deg_c = sp.diags(np.power(user_degree + 1e-10, -self.c))  # Du^(-c)
+        self.item_deg_c = sp.diags(np.power(item_degree + 1e-10, -self.c))  # Di^(-c)
+
         self.inter = self.inter.tocsr() # R (scipy-csr)
         self.inter_t = self.inter.transpose() # R^T (scipy-csc)
         
-        # self.norm_inter = (user_d_inv_sqrt @ self.inter @ item_d_inv_sqrt).tocsc() # R_tilde (scipy-csc)
-        # self.norm_inter_t = self.norm_inter.transpose().tocsc() # R_tilde^T (scipy-csc)
-        
-        # self.norm_item_co = (self.norm_inter @ self.norm_inter_t).tocsr() # R_tilde @ R_tilde^T (scipy-csr)
-        # norm_item_co_degree = np.array(self.norm_item_co.sum(axis=1)).flatten()
-        # self.norm_item_d_inv = sp.diags(np.power(norm_item_co_degree + 1e-10, -self.beta))
-        
-        # self.item_d     = sp.diags(np.power(item_degree,          self.beta)) # Di^(beta)
-        # self.item_d_inv = sp.diags(np.power(item_degree + 1e-10, -self.beta)) # Di^(-beta)
-        
-        # u, s, v = svds(self.norm_inter, which='LM', k=self.cutoff, random_state=args.rand_seed)
-        # self.u, self.v = u, v.T
         gram_item = self.inter_t @ self.inter
         gram_item_degree = np.array(gram_item.sum(axis=1)).flatten()
         self.gram_item_d_inv = sp.diags(np.power(gram_item_degree + 1e-10, -1))
@@ -47,41 +42,16 @@ class GSP_Norm(BaseModel):
         
         signal = self.inter[pck_users].todense() # rows of R (numpy)
 
-        # # 111
-        # full_preds = signal @ self.item_d_inv @ self.inter_t @ self.user_d_inv @ self.inter.tocsc() @ self.item_d_inv
-        # # 110
-        # full_preds = signal @ self.item_d_inv @ self.inter_t @ self.user_d_inv @ self.inter.tocsc()
-        # # 011
-        # full_preds = signal @ self.inter_t @ self.user_d_inv @ self.inter.tocsc() @ self.item_d_inv
-        # # -1-
-        # full_preds = signal @ self.item_d_inv_sqrt @ self.inter_t @ self.user_d_inv @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # ---
-        # full_preds = signal @ self.item_d_inv_sqrt @ self.inter_t @ self.user_d_inv_sqrt @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # 000
-        # full_preds = signal @ self.inter_t @ self.inter.tocsc()
-        # # 001
-        # full_preds = signal @ self.inter_t @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # 010
-        # full_preds = signal @ self.inter_t @ self.user_d_inv @ self.inter.tocsc()
-        # # 100
-        # full_preds = signal @ self.item_d_inv @ self.inter_t @ self.inter.tocsc()
-        # # 1--
-        # full_preds = signal @ self.item_d_inv @ self.inter_t @ self.user_d_inv_sqrt @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # 11-
-        # full_preds = signal @ self.item_d_inv @ self.inter_t @ self.user_d_inv @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # -10
-        # full_preds = signal @ self.item_d_inv_sqrt @ self.inter_t @ self.user_d_inv @ self.inter.tocsc()
-        # # -2-
-        # full_preds = signal @ self.item_d_inv_sqrt @ self.inter_t @ self.user_d_inv @ self.user_d_inv @ self.inter.tocsc() @ self.item_d_inv_sqrt
-        # # item_gram_degree
-        # full_preds = signal @ self.gram_item_d_inv_sqrt @ self.inter_t @ self.inter.tocsc() @ self.gram_item_d_inv_sqrt
-        # # item_gram_degree 10
-        # full_preds = signal @ self.gram_item_d_inv @ self.inter_t @ self.inter.tocsc()
-        # # item_gram_degree 01
-        # full_preds = signal @ self.inter_t @ self.inter.tocsc() @ self.gram_item_d_inv
-        # 101
-        full_preds = signal @ self.item_d_inv @ self.inter_t @ self.inter.tocsc() @ self.item_d_inv
-     
+        '''
+            (1) D_I^{-a} R^t D_U^{-b} R D_I^{-c}
+            (2) D_U^{-a} R D_I^{-b} R^t D_U^{-c}
+        '''
+        # (1)
+        full_preds = signal @ self.item_deg_a @ self.inter_t @ self.user_deg_b @ self.inter.tocsc() @ self.item_deg_c
+
+        # (2)
+        # full_preds = signal @ self.user_deg_a @ self.inter.tocsc() @ self.item_deg_b @ self.inter_t @ self.item_deg_c
+
         full_preds = torch.tensor(full_preds).to(args.device)    
         full_preds = self._mask_predict(full_preds, train_mask)
         return full_preds
