@@ -75,6 +75,9 @@ def configurate():
     parser.add_argument('--freq_num', type=int) # Cutoff
     parser.add_argument('--filter', type=str) # Cutoff
     parser.add_argument('--hyp', type=float) # Cutoff
+    parser.add_argument('--a', type=float) # Cutoff
+    parser.add_argument('--b', type=float) # Cutoff
+    parser.add_argument('--c', type=float) # Cutoff
     
     args = parser.parse_args()
     
