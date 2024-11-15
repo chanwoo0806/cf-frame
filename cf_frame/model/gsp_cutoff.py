@@ -27,7 +27,7 @@ class GSP_Cutoff(BaseModel):
         u, s, v = svds(inter_, which='LM', k=self.freq_num, random_state=args.rand_seed) # SVD for k largest singular values
         self.v = v.T # right singular vecs (numpy.ndarray)
         
-        x = 1-s # normalized laplacian = identity - normalized adjacency
+        x = 1 - s # normalized laplacian = identity - normalized adjacency
         if self.filter == 'exponential':
             self.filter_weight = sp.diags(np.exp(self.hyp * (-x)))
         elif self.filter == 'harmonic':
