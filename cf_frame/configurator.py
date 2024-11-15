@@ -75,6 +75,9 @@ def configurate():
     parser.add_argument('--freq_num', type=int) # Cutoff
     parser.add_argument('--filter', type=str) # Cutoff
     parser.add_argument('--hyp', type=float) # Cutoff
+
+    ### BSPM components analysis
+    # parser.add_argument('--', type=float)
     
     args = parser.parse_args()
     
