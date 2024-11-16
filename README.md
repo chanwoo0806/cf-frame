@@ -11,4 +11,5 @@ pip install tensorboard
 # recommended
 conda install jupyter
 pip install pybind11
+pip install torchdiffeq
 ```
