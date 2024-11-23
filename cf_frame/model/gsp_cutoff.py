@@ -13,6 +13,7 @@ class GSP_Cutoff(BaseModel):
         self.freq_num = args.freq_num
         self.filter = args.filter
         self.hyp = args.hyp
+        self.set_filter()
         
     def set_filter(self):
         user_degree = np.array(self.inter.sum(axis=1)).flatten() # Du

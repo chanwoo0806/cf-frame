@@ -11,6 +11,7 @@ class PGSP(BaseModel):
         self.inter = data_handler.trn_mat # R (scipy-coo)
         self.beta = 0.5
         self.cutoff = 512
+        self.set_filter()
         
     def set_filter(self):
         user_degree = np.array(self.inter.sum(axis=1)).flatten() # Du

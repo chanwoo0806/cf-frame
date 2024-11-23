@@ -11,6 +11,7 @@ class GSP_Poly(BaseModel):
         self.normalize = args.normalize
         self.coeffs = args.coeffs
         self.layer_num = len(args.coeffs)
+        self.set_filter()
         
     def set_filter(self):
         user_degree = np.array(self.inter.sum(axis=1)).flatten() # Du

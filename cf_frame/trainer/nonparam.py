@@ -9,9 +9,6 @@ class NonParam(BaseTrainer):
         
     @log_exceptions
     def train(self, model):
-        start_time = time.time()
-        model.set_filter()
-        self.logger.log(f">>> Filter setting time: {(time.time() - start_time)/60:.1f} mins")
         self.evaluate(model)
         return model
     

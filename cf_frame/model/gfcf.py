@@ -10,6 +10,7 @@ class GFCF(BaseModel):
         super().__init__(data_handler)
         self.inter = data_handler.trn_mat # R (scipy-coo)
         self.cutoff = 256
+        self.set_filter()
         
     def set_filter(self):
         user_degree = np.array(self.inter.sum(axis=1)).flatten() # Du
