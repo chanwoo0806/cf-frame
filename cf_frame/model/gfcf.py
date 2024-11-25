@@ -8,7 +8,7 @@ from cf_frame.configurator import args
 class GFCF(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
-        self.inter = data_handler.trn_mat # R (scipy-coo)
+        self.inter = data_handler.get_inter() # R (scipy-coo)
         self.cutoff = 256
         self.set_filter()
         

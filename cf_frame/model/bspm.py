@@ -10,7 +10,7 @@ from torchdiffeq import odeint
 class BSPM(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
-        self.adj_mat = data_handler.trn_mat.tolil()  
+        self.adj_mat = data_handler.get_inter().tolil()  
 
         self.device = args.device
 

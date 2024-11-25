@@ -8,7 +8,7 @@ from cf_frame.configurator import args
 class GSP_Cutoff(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
-        self.inter = data_handler.trn_mat # R (scipy.sparse.coo)
+        self.inter = data_handler.get_inter() # R (scipy.sparse.coo)
         self.normalize = args.normalize
         self.freq_num = args.freq_num
         self.filter = args.filter
