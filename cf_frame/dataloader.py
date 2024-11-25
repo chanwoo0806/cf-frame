@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import scipy.sparse as sp
+from scipy.sparse.linalg import svds
 from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
@@ -10,6 +11,7 @@ try:
     import cf_frame.sampling as sampling
 except:
     print("No CMAKE - We can't use cpp sampling.")
+from cf_frame.util import scipy_coo_to_torch_sparse
 
 
 class PairwiseTrnData(data.Dataset):
@@ -168,80 +170,120 @@ class DataHandler:
         if type(mat) != coo_matrix:
             mat = coo_matrix(mat)
         return mat
-
-    def _scipy_coo_to_torch_sparse(self, mat):
-        # scipy.sparse.coo_matrix -> torch.sparse.FloatTensor
-        idxs = torch.from_numpy(np.vstack([mat.row, mat.col]).astype(np.int64))
-        vals = torch.from_numpy(mat.data.astype(np.float32))
-        shape = torch.Size(mat.shape)
-        return torch.sparse.FloatTensor(idxs, vals, shape).to(args.device)
-
-    def get_normalized_adj(self, inter=None):
-        """Transform uni-directional interaction matrix in coo_matrix into bi-directional normalized adjacency matrix in torch.sparse.FloatTensor
-        """
-        # Get adjacency matrix
-        inter = self.trn_mat if inter is None else inter # R
-        zero_u = csr_matrix((self.user_num, self.user_num))
-        zero_i = csr_matrix((self.item_num, self.item_num))
-        adj = sp.vstack([sp.hstack([zero_u, inter]), sp.hstack([inter.transpose(), zero_i])])
-        adj = (adj != 0) * 1.0 # A
-        # adj = (adj + sp.eye(adj.shape[0])) * 1.0 # self-connection
+    
+    ########################################################
+    ### DataLoader for Training, Validating, and Testing ###
+    ########################################################
+    
+    def load_data(self):
+        trn_mat = self._load_one_mat(self.trn_file)
+        tst_mat = self._load_one_mat(self.tst_file)
+        val_mat = self._load_one_mat(self.val_file) if os.path.exists(self.val_file) else tst_mat
+        self.user_num, self.item_num = trn_mat.shape
         
-        # Normalize adjacency matrix
-        degree = np.array(adj.sum(axis=-1)) + 1e-10 # D
-        d_inv_sqrt = np.reshape(np.power(degree, -0.5), [-1])
-        d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
-        d_inv_sqrt_mat = sp.diags(d_inv_sqrt) # D^(-0.5)
-        norm_adj = adj.dot(d_inv_sqrt_mat).transpose().dot(d_inv_sqrt_mat).tocoo() # D^(-0.5) * A * D^(-0.5)
+        # Load dataset
+        if self.loss_type == 'pairwise':
+            trn_data = PairwiseTrnData(trn_mat)
+        elif self.loss_type == 'pointwise':
+            trn_data = PointwiseTrnData(trn_mat)
+        elif self.loss_type == 'multineg':
+            trn_data = MultiNegTrnData(trn_mat)
+        elif self.loss_type == 'multineg_cpp':
+            trn_data = MultiNegTrnData_CPP(trn_mat)
+        elif self.loss_type == 'nonparam':
+            pass
+        else:
+            raise NotImplementedError
+        val_data = AllRankTstData(val_mat, trn_mat)
+        tst_data = AllRankTstData(tst_mat, trn_mat)
+        
+        # Set dataloader
+        self.train_dataloader = data.DataLoader(trn_data, batch_size=args.trn_batch, shuffle=True, num_workers=0) if self.loss_type != 'nonparam' else None
+        self.valid_dataloader = data.DataLoader(val_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
+        self.test_dataloader  = data.DataLoader(tst_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
 
-        # Transform to torch.sparse.FloatTensor
-        norm_adj = self._scipy_coo_to_torch_sparse(norm_adj)
-        return norm_adj
+    ############################################################
+    ### Interaction, Adjacency Matrix for Graph-based Models ###
+    ############################################################
+    
+    def get_inter(self):
+        return self._load_one_mat(self.trn_file)
 
     def get_normalized_inter(self, inter=None):
-        """Transform uni-directional interaction matrix in coo_matrix into uni-directional normalized interaction matrix in torch.sparse.FloatTensor
-        """
         # Get interaction matrix
-        inter = self.trn_mat if inter is None else inter # R
-        
+        inter = self._load_one_mat(self.trn_file) if inter is None else inter # R
         # Normalize interaction matrix
         user_degree = np.array(inter.sum(axis=1)).flatten() # Du
         item_degree = np.array(inter.sum(axis=0)).flatten() # Di
         user_d_inv_sqrt = sp.diags(np.power(user_degree + 1e-10, -0.5)) # Du^(-0.5)
         item_d_inv_sqrt = sp.diags(np.power(item_degree + 1e-10, -0.5)) # Di^(-0.5)
         norm_inter = (user_d_inv_sqrt @ inter @ item_d_inv_sqrt).tocoo() # Du^(-0.5) * R * Di^(-0.5)
-        
-        # Transform to torch.sparse.FloatTensor
-        norm_inter = self._scipy_coo_to_torch_sparse(norm_inter)
         return norm_inter
     
-    def get_inter(self, inter=None):
-        inter = self.trn_mat if inter is None else inter
-        return self._scipy_coo_to_torch_sparse(inter)
+    def get_normalized_adj(self, inter=None):
+        # Get adjacency matrix
+        inter = self._load_one_mat(self.trn_file) if inter is None else inter # R
+        zero_u = csr_matrix((self.user_num, self.user_num))
+        zero_i = csr_matrix((self.item_num, self.item_num))
+        adj = sp.vstack([sp.hstack([zero_u, inter]), sp.hstack([inter.transpose(), zero_i])])
+        adj = (adj != 0) * 1.0 # A
+        # adj = (adj + sp.eye(adj.shape[0])) * 1.0 # self-connection
+        # Normalize adjacency matrix
+        degree = np.array(adj.sum(axis=-1)) + 1e-10 # D
+        d_inv_sqrt = np.reshape(np.power(degree, -0.5), [-1])
+        d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
+        d_inv_sqrt_mat = sp.diags(d_inv_sqrt) # D^(-0.5)
+        norm_adj = adj.dot(d_inv_sqrt_mat).transpose().dot(d_inv_sqrt_mat).tocoo() # D^(-0.5) * A * D^(-0.5)
+        return norm_adj
 
-    def load_data(self):
-        self.trn_mat = self._load_one_mat(self.trn_file)
-        self.tst_mat = self._load_one_mat(self.tst_file)
-        self.val_mat = self._load_one_mat(self.val_file) if os.path.exists(self.val_file) else self.tst_mat
-        self.user_num, self.item_num = self.trn_mat.shape
-        
-        # Load dataset
-        if self.loss_type == 'pairwise':
-            trn_data = PairwiseTrnData(self.trn_mat)
-        elif self.loss_type == 'pointwise':
-            trn_data = PointwiseTrnData(self.trn_mat)
-        elif self.loss_type == 'multineg':
-            trn_data = MultiNegTrnData(self.trn_mat)
-        elif self.loss_type == 'multineg_cpp':
-            trn_data = MultiNegTrnData_CPP(self.trn_mat)
-        elif self.loss_type == 'nonparam':
-            pass
+    ##################################################
+    ### Methods for Graph Polynomial Filter Models ###
+    ##################################################
+
+    def pf_set_inter(self):
+        self.inter = self.get_inter().tocsr() # scipy.sparse.csr
+        norm_inter = self.get_normalized_inter()
+        self.norm_inter = scipy_coo_to_torch_sparse(norm_inter) # torch.sparse.FloatTensor
+        if 'mask' in args.loss.lower():
+            self.inter_dok = self.get_inter().todok() # scipy.sparse.dok
+            self.norm_inter_dok = self.get_normalized_inter().todok() # scipy.sparse.dok
+    
+    def pf_set_ideal(self):
+        path = f'./dataset/{args.dataset}/svd/v_full.npy'
+        if os.path.exists(path):
+            v = np.load(path)[:, :args.ideal_num] # caveat: singular vectors need to be sorted in ascending order
+            self.ideal = torch.tensor(v).to(args.device)
         else:
-            raise NotImplementedError
-        val_data = AllRankTstData(self.val_mat, self.trn_mat)
-        tst_data = AllRankTstData(self.tst_mat, self.trn_mat)
-        
-        # Set dataloader
-        self.train_dataloader = data.DataLoader(trn_data, batch_size=args.trn_batch, shuffle=True, num_workers=0) if self.loss_type != 'nonparam' else None
-        self.valid_dataloader = data.DataLoader(val_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
-        self.test_dataloader  = data.DataLoader(tst_data, batch_size=args.tst_batch, shuffle=False, num_workers=0)
+            norm_inter = self.get_normalized_norm_inter()
+            u, s, v = svds(norm_inter, which='LM', k=args.ideal_num, random_state=args.rand_seed) # SVD for k largest singular vals
+            self.ideal = torch.tensor(v.T).to(args.device)
+            
+    def pf_get_masked_inter(self, row_indices, col_indices):
+        return self._mask_mat(self.inter_dok, row_indices, col_indices, rescale=False).tocsr() # scipy.sparse.csr
+    
+    def pf_get_masked_norm_inter(self, row_indices, col_indices, renormalize=True):
+        if renormalize:
+            norm_inter = self._mask_mat(self.inter_dok, row_indices, col_indices, rescale=False)
+            norm_inter = self.get_normalized_inter(norm_inter)
+        else:
+            norm_inter = self._mask_mat(self.norm_inter_dok, row_indices, col_indices, rescale=True)
+        return scipy_coo_to_torch_sparse(norm_inter) # torch.sparse.FloatTensor      
+
+    def _mask_mat(self, mat, row_indices, col_indices, rescale):
+        '''
+        Args:
+            mat: scipy.sparse.dok_matrix
+            row_indices: list of row indices to mask (torch.IntTensor)
+            col_indices: list of column indices to mask (torch.IntTensor)
+        Returns:
+            scipy.sparse.coo_matrix
+        '''
+        before = mat.nnz  
+        for row_idx, col_idx in zip(row_indices.tolist(), col_indices.tolist()):
+            mat[(row_idx, col_idx)] = 0.0
+        after = mat.nnz
+        mat = mat.tocoo()
+        if rescale:
+            keep_ratio = after / before
+            mat /= keep_ratio
+        return mat

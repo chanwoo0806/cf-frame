@@ -1,0 +1,21 @@
+rand_seed: 2024
+
+epoch: 1000
+trn_batch: 2048
+tensorboard: 1
+
+tst_step: 2
+patience: 5
+criterion: [1, 1]
+
+metrics: [recall, ndcg]
+ks: [10, 20, 50]
+tst_batch: 1024
+
+model: pf_chebii
+dataset: gowalla
+trainer: polyfilter
+
+lr: 1.0e-3
+order: 5
+nonparam: 0
