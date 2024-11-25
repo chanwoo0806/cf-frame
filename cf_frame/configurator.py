@@ -75,7 +75,33 @@ def configurate():
     parser.add_argument('--freq_num', type=int) # Cutoff
     parser.add_argument('--filter', type=str) # Cutoff
     parser.add_argument('--hyp', type=float) # Cutoff
-    
+
+    ### BSPM 
+    parser.add_argument('--solver_idl', type=str, default='euler', help="heat equation solver")
+    parser.add_argument('--solver_blr', type=str, default='euler', help="ideal low-pass solver")
+    parser.add_argument('--solver_shr', type=str, default='euler', help="sharpening solver")
+
+    parser.add_argument('--K_idl', type=int, default=1, help='T_idl / \tau')
+    parser.add_argument('--T_idl', type=float, default=1, help='T_idl')
+
+    parser.add_argument('--K_b', type=int, default=1, help='T_b / \tau')
+    parser.add_argument('--T_b', type=float, default=1, help='T_b')
+
+    parser.add_argument('--K_s', type=int, default=1, help='T_s / \tau')
+    parser.add_argument('--T_s', type=float, default=1, help='T_s')
+
+    parser.add_argument('--factor_dim', type=int, default=256, help='factor_dim')
+    parser.add_argument('--idl_beta', type=float, default=0.3, help='beta')
+
+    # parser.add_argument('--final_sharpening', type=eval, default=True, choices=[True, False])
+    # parser.add_argument('--sharpening_off', type=eval, default=False, choices=[True, False])
+    # parser.add_argument('--t_point_combination', type=eval, default=False, choices=[True, False])
+
+    parser.add_argument('--final_sharpening', type=lambda x: x.lower() in ('true', '1'), default=True, choices=[True, False])
+    parser.add_argument('--sharpening_off', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
+    parser.add_argument('--t_point_combination', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
+                                                                                    
+                                                                            
     args = parser.parse_args()
     
     # Use default values if args are not given

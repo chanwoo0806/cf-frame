@@ -6,7 +6,10 @@ from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
-import cf_frame.sampling as sampling
+try:
+    import cf_frame.sampling as sampling
+except:
+    print("No CMAKE - We can't use cpp sampling.")
 
 
 class PairwiseTrnData(data.Dataset):
