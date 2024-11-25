@@ -6,6 +6,7 @@ import importlib
 import numpy as np
 import pickle
 from cf_frame.configurator import args
+from scipy.special import comb
 
 def init_seed():
     if args.rand_seed is not None:
@@ -136,3 +137,15 @@ def scipy_coo_to_torch_sparse(mat):
     vals = torch.from_numpy(mat.data.astype(np.float32))
     shape = torch.Size(mat.shape)
     return torch.sparse.FloatTensor(idxs, vals, shape).to(args.device)
+
+
+def cheby(k, x):
+    if k == 0:
+        return 1 if not isinstance(x, np.ndarray) else np.ones_like(x)
+    elif k == 1:
+        return x
+    else:
+        return 2 * x * cheby(k-1, x) - cheby(k-2, x)
+    
+def bern(K, k, x):
+    return comb(K, k) * (x**k) * ((1-x)**(K-k))
