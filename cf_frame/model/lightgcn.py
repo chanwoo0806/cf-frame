@@ -3,6 +3,7 @@ from torch import nn
 from cf_frame.model import BaseModel
 from cf_frame.module import EdgeDrop
 from cf_frame.configurator import args
+from cf_frame.util import scipy_coo_to_torch_sparse
 
 init = nn.init.xavier_uniform_
 uniformInit = nn.init.uniform
@@ -11,7 +12,8 @@ class LightGCN(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
 
-        self.adj = data_handler.get_normalized_adj()
+        adj = data_handler.get_normalized_adj()
+        self.adj = scipy_coo_to_torch_sparse(adj)
 
         self.embed_dim = args.embed_dim
         self.layer_num = args.layer_num

@@ -124,8 +124,15 @@ def pload(path):
 	print('load path = {} object'.format(path))
 	return res
 
-
 def pstore(x, path):
 	with open(path, 'wb') as f:
 		pickle.dump(x, f)
 	print('store object in path = {} ok'.format(path))
+
+
+def scipy_coo_to_torch_sparse(mat):
+    # scipy.sparse.coo_matrix -> torch.sparse.FloatTensor
+    idxs = torch.from_numpy(np.vstack([mat.row, mat.col]).astype(np.int64))
+    vals = torch.from_numpy(mat.data.astype(np.float32))
+    shape = torch.Size(mat.shape)
+    return torch.sparse.FloatTensor(idxs, vals, shape).to(args.device)
