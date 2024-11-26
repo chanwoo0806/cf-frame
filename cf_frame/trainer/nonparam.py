@@ -9,17 +9,4 @@ class NonParam(BaseTrainer):
         
     @log_exceptions
     def train(self, model):
-        self.evaluate(model)
         return model
-    
-    # if test needed, delete below two methods
-    @log_exceptions
-    def evaluate(self, model, epoch_idx=None):
-        eval_result = super().evaluate(model, epoch_idx)
-        if args.summary is not None:
-            self.logger.log_summary(eval_result, args.ks)
-        return eval_result
-    
-    @log_exceptions
-    def test(self, model):
-        pass
