@@ -12,11 +12,10 @@ class PolyFilter(BaseTrainer):
 
     @log_exceptions
     def train(self, model):
-        self._analyze(model, 'initial')
         if args.nonparam:
-            self.evaluate(model)
             best_model = model
         else:
+            self._analyze(model, 'initial')
             best_model = super().train(model)
         return best_model
 
@@ -26,6 +25,13 @@ class PolyFilter(BaseTrainer):
         epoch_idx = epoch_idx if epoch_idx is not None else 'best'
         self._analyze(model, f'epoch_{epoch_idx}')
         return eval_result
+    
+    @log_exceptions
+    def test(self, model):
+        eval_result = super().test(model)
+        self._analyze(model, 'test')
+        return eval_result
+
 
     @log_exceptions
     def _analyze(self, model, name):
@@ -73,7 +79,7 @@ def save_filter_fig(name, x, bases, weights):
     plt.grid(True)
     plt.xlabel('lambda')
     plt.title(' '.join(weights))
-    plt.savefig(f'{args.path}/figs/{name}_full.png')
+    plt.savefig(f'{args.path}/figs/{name}_poly.png')
     plt.clf()
     # Each Basis
     plt.plot(x, b)
@@ -81,5 +87,18 @@ def save_filter_fig(name, x, bases, weights):
     plt.grid(True)
     plt.xlabel('lambda')
     plt.legend(weights)
-    plt.savefig(f'{args.path}/figs/{name}_each.png')
+    plt.savefig(f'{args.path}/figs/{name}_bases.png')
     plt.clf()
+    # Full with Ideal
+    if args.ideal_num:
+        s = np.load(f'./dataset/{args.dataset}/svd/s_full.npy')[args.ideal_num-1].item()
+        i = np.zeros_like(x)
+        i[:int(len(x)*(1-s))] = 1
+        plt.plot(x, f + args.ideal_weight * i)
+        plt.axhline(0, color='black', lw=1.5)
+        plt.grid(True)
+        plt.xlabel('lambda')
+        weights += [f'[Ideal - {args.ideal_num}] {args.ideal_weight:.1f}']
+        plt.title(' '.join(weights))
+        plt.savefig(f'{args.path}/figs/{name}_full.png')
+        plt.clf()
