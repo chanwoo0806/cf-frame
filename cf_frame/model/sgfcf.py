@@ -27,7 +27,6 @@ class SGFCF(BaseModel):
                 inter_items = freq_matrix[:, interactions].t()
                 inter_items[:, u] = 0
                 connect_matrix = inter_items.mm(inter_items.t())
-
                 size = inter_items.shape[0]
                 ratio_u=((connect_matrix!=0).sum().item()-(connect_matrix.diag()!=0).sum().item())/(size*(size-1))
                 homo_ratio_user.append(ratio_u)
