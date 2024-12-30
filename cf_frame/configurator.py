@@ -48,26 +48,26 @@ def configurate():
     parser.add_argument('--ideal', type=float, help='weight of ideal low-pass filter')
 
     ### UltraGCN
-    parser.add_argument('--w1', type=float)
-    parser.add_argument('--w2', type=float)
-    parser.add_argument('--w3', type=float)
-    parser.add_argument('--w4', type=float)
-    parser.add_argument('--negative_num', type=int)
-    parser.add_argument('--negative_weight', type=int)
-    parser.add_argument('--gamma', type=float, help='[UltraGCN] loss')
-    parser.add_argument('--lambda_', type=float)
-    parser.add_argument('--sampling_sift_pos', type=bool)
+    # parser.add_argument('--w1', type=float)
+    # parser.add_argument('--w2', type=float)
+    # parser.add_argument('--w3', type=float)
+    # parser.add_argument('--w4', type=float)
+    # parser.add_argument('--negative_num', type=int)
+    # parser.add_argument('--negative_weight', type=int)
+    # parser.add_argument('--gamma', type=float, help='[UltraGCN] loss')
+    # parser.add_argument('--lambda_', type=float)
+    # parser.add_argument('--sampling_sift_pos', type=bool)
 
     ### SimpleX
-    parser.add_argument('--neg_num', type=int, help='The number of negative sampling in `MultiNegTrnData`.')
-    parser.add_argument('--score', type=str, help='Possible: [cosine, dot]')
-    parser.add_argument('--aggregator', type=str, help='Possible: [mean, user_attention, self_attention]')
-    parser.add_argument('--fusing_weight', type=float)
-    parser.add_argument('--attention_dropout', type=float)
-    parser.add_argument('--history_num', type=int)
-    parser.add_argument('--dropout', type=int)
-    parser.add_argument('--neg_weight', type=float)
-    parser.add_argument('--margin', type=float)
+    # parser.add_argument('--neg_num', type=int, help='The number of negative sampling in `MultiNegTrnData`.')
+    # parser.add_argument('--score', type=str, help='Possible: [cosine, dot]')
+    # parser.add_argument('--aggregator', type=str, help='Possible: [mean, user_attention, self_attention]')
+    # parser.add_argument('--fusing_weight', type=float)
+    # parser.add_argument('--attention_dropout', type=float)
+    # parser.add_argument('--history_num', type=int)
+    # parser.add_argument('--dropout', type=int)
+    # parser.add_argument('--neg_weight', type=float)
+    # parser.add_argument('--margin', type=float)
 
     # ### GSP components analysis
     # parser.add_argument('--normalize', type=int)
@@ -92,6 +92,14 @@ def configurate():
     # parser.add_argument('--final_sharpening', type=lambda x: x.lower() in ('true', '1'), default=True, choices=[True, False])
     # parser.add_argument('--sharpening_off', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
     # parser.add_argument('--t_point_combination', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
+
+    ### SGFCF
+    parser.add_argument('--k', type=int, default=100, help='The number of required features')
+    parser.add_argument('--beta_1', type=float, default=1.0, help='coef for the filter')
+    parser.add_argument('--beta_2', type=float, default=1.0, help='coef for the filter')
+    parser.add_argument('--alpha', type=float, default=0.0, help='param for G^2N')
+    parser.add_argument('--eps', type=float, default=0.5, help='param for G^2N')
+    parser.add_argument('--gamma', type=float, default=1.0, help='weight for non-low frequency')
     
     ### PolyFilter
     parser.add_argument('--order', type=int)
@@ -123,7 +131,7 @@ def configurate():
     # Automatically set args
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.path = f'./log/' if args.folder is None else f'./log/{args.folder}/'
-    args.path += f'{time.strftime("%m%d-%H:%M:%S")}-{args.comment}'
+    args.path += f'{time.strftime("%m%d-%H%M%S")}-{args.comment}'
     
     return args
 
