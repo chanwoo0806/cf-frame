@@ -1,8 +1,6 @@
 __pycache__/
 log/
 test/
-ultragcn_official.py
 .DS_Store
 *.sh
 *.npy
-cf_frame/model/sgfcf_raw.py
