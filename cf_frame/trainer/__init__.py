@@ -83,7 +83,7 @@ class BaseTrainer:
         # re-initialize the model and load the best parameter
         self.logger.log(">>> Best Epoch {}".format(best_epoch))
         best_model = build_model(self.data_handler).to(args.device)
-        best_model.load_state_dict(torch.load(f'{args.path}/best.pt'))
+        best_model.load_state_dict(torch.load(f'{args.path}/best.pt', weights_only=True))
         # self.evaluate(best_model) # activate if best performance in validation is needed
         return best_model
 
