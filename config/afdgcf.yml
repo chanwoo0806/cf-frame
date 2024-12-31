@@ -1,0 +1,31 @@
+# Basic
+rand_seed: 2024
+dataset: yelp2018
+epoch: 1500
+trn_batch: 2048
+tensorboard: 1
+
+# Early-stop
+tst_step: 5
+patience: 10
+criterion: [1, 1]
+
+# Test
+metrics: [recall, ndcg]
+ks: [10, 20]
+tst_batch: 1024
+
+# Tunable
+embed_reg: 1.0e-4
+lr: 1.0e-3
+
+# Develop (General)
+comment: afdgcf
+summary: afdgcf
+model: afdgcf
+loss: afdloss
+
+# Develop (Specific)
+embed_dim: 128
+layer_num: 3
+keep_rate: 1.0
