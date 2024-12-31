@@ -16,3 +16,18 @@ conda install jupyter
 pip install pybind11
 pip install torchdiffeq
 ```
+
+# Run
+```bash
+python main.py \
+    turbocf \
+    --default default \
+    --dataset gowalla \
+    --loss nonparam \
+    --trainer nonparam \
+    --summary turbocf-gowalla \
+    --rand_seed 2024 \
+    --alpha 0.6 \
+    --power 0.7 \
+    --filter 1
+```
