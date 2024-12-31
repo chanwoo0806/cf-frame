@@ -34,6 +34,61 @@ class BPR:
         return loss, losses
     
 
+class AFDLoss:
+    def __init__(self):
+        self.embed_reg = args.embed_reg
+        self.alpha = args.alpha
+        self.type = 'pairwise'
+
+    def __call__(self, model, batch_data):
+        ancs, poss, negs = batch_data
+
+        # Forward pass to get embeddings
+        user_embeds, item_embeds = model.forward()
+        anc_embeds, pos_embeds, neg_embeds = user_embeds[ancs], item_embeds[poss], item_embeds[negs]
+
+        # Compute BPR loss
+        pos_preds = (anc_embeds * pos_embeds).sum(dim=-1)
+        neg_preds = (anc_embeds * neg_embeds).sum(dim=-1)
+        bpr_loss = torch.sum(torch.nn.functional.softplus(neg_preds - pos_preds)) / len(ancs)
+
+        # Compute regularization loss
+        anc_egos, pos_egos, neg_egos = model.user_embeds[ancs], model.item_embeds[poss], model.item_embeds[negs]
+        reg_loss = (anc_egos.norm(2).pow(2) + pos_egos.norm(2).pow(2) + neg_egos.norm(2).pow(2)) / len(ancs)
+        reg_loss *= self.embed_reg * 0.5
+
+        # Compute correlation loss
+        cor_loss_u, cor_loss_i = torch.zeros((1,)).to(args.device), torch.zeros((1,)).to(args.device)
+        user_layer_correlations = []
+        item_layer_correlations = []
+        embeds_list = model.embeds_list
+        for i in range(1, model.layer_num + 1):
+            user_layer, item_layer = torch.split(embeds_list[i], [model.user_num, model.item_num])
+            user_layer_correlations.append(self._calculate_correlation(user_layer))
+            item_layer_correlations.append(self._calculate_correlation(item_layer))
+
+        user_layer_correlations_coef = (1 / torch.tensor(user_layer_correlations)) / torch.sum(
+            1 / torch.tensor(user_layer_correlations)
+        )
+        item_layer_correlations_coef = (1 / torch.tensor(item_layer_correlations)) / torch.sum(
+            1 / torch.tensor(item_layer_correlations)
+        )
+
+        for i in range(1, model.layer_num + 1):
+            cor_loss_u += user_layer_correlations_coef[i - 1] * user_layer_correlations[i - 1]
+            cor_loss_i += item_layer_correlations_coef[i - 1] * item_layer_correlations[i - 1]
+
+        cor_loss = self.alpha * (cor_loss_u + cor_loss_i)
+
+        # Total loss
+        loss = bpr_loss + reg_loss + cor_loss
+        losses = {'bpr_loss': bpr_loss, 'reg_loss': reg_loss, 'cor_loss': cor_loss}
+        return loss, losses
+
+    def _calculate_correlation(self, x):
+        return x.T.corrcoef().triu(diagonal=1).norm()
+
+
 class DirectAU:
     def __init__(self):
         self.gamma = args.uniform

@@ -51,6 +51,10 @@ def configurate():
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
 
+    # AFDGCF (AFD-LightGCN)
+    afdgcf_parser = subparsers.add_parser('afdgcf', parents=[common_parser], help="afdgcf model operations")
+    afdgcf_parser.add_argument('--alpha', type=float, default=1e-4, help='Correlation Loss Strength')
+
     # TurboCF
     turbocf_parser = subparsers.add_parser('turbocf', parents=[common_parser], help="turbocf model operations")
     turbocf_parser.add_argument("--dense", action='store_true', default=True, help="Sparse Operations")
@@ -84,7 +88,7 @@ def configurate():
     ultragcn_parser.add_argument('--negative_num', type=int)
     ultragcn_parser.add_argument('--negative_weight', type=int)
     ultragcn_parser.add_argument('--gamma', type=float, help='[UltraGCN] loss')
-    ultragcn_parser.add_argument('--lambda', type=float)
+    ultragcn_parser.add_argument('--lambda_', type=float)
     ultragcn_parser.add_argument('--sampling_sift_pos', type=bool)
 
     # GFCF
