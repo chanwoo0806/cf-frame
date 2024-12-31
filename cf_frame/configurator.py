@@ -53,6 +53,7 @@ def configurate():
 
     # TurboCF
     turbocf_parser = subparsers.add_parser('turbocf', parents=[common_parser], help="turbocf model operations")
+    turbocf_parser.add_argument("--dense", action='store_true', default=True, help="Sparse Operations")
     turbocf_parser.add_argument("--alpha", type=float, default=0.5, help="For normalization of R")
     turbocf_parser.add_argument("--power", type=float, default=1, help="For normalization of P")
     turbocf_parser.add_argument("--filter", type=float, default=1, help="1:linear, 2: 2nd-order, 3: Poly.approx of ideal LPF")

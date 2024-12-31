@@ -1,78 +1,84 @@
 import torch
-import numpy as np
 from cf_frame.model import BaseModel
 from cf_frame.configurator import args
-import gc
-from tqdm import tqdm 
 
 
 class TurboCF(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
-        self.R_tr = self._convert_sp_mat_to_sp_tensor(data_handler.get_inter()).cpu().to_dense()
-        self.R_norm = self._normalize_sparse_adjacency_matrix(self.R_tr, args.alpha)
+        self.R_tr = self._convert_sp_mat_to_sp_tensor(data_handler.get_inter()).coalesce().to(args.device)
+        self.set_filter()
+
+    def set_filter(self):
+        R_norm = self._normalize_sparse_adjacency_matrix(self.R_tr, args.alpha).to(args.device)
+        if args.dense:
+            R_norm = R_norm.to_dense()
+            self.P = R_norm.T @ R_norm
+            self.P.data **= args.power            
+        else:
+            self.P = torch.sparse.mm(R_norm.T, R_norm).coalesce()
+            self.P._values().pow_(args.power)
+        del R_norm
 
     def full_predict(self, batch_data):
         pck_users, train_mask = batch_data
+        R = self.R_tr.index_select(0, pck_users)
         
-        R_norm = self.R_norm
-        R = self.R_tr[pck_users.cpu()]
+        if args.dense:
+            R = R.to_dense()
+            if args.filter == 1:
+                results = R @ (self.P)  
+            elif args.filter == 2:
+                results = R @ (2 * self.P - self.P @ self.P)
+            elif args.filter == 3:
+                results = R @ (self.P + 0.01 * (-self.P @ self.P @ self.P + 10 * self.P @ self.P - 29 * self.P))
 
-        P = R_norm.T @ R_norm
-        P.data **= args.power
-        
-        P = P.to(device=args.device).float()
-        R = R.to(device=args.device).float()
+            rate_matrix = results + (-99999) * R
+            full_preds = self._mask_predict(rate_matrix, train_mask)
+            
+        else:
+            if args.filter == 1:
+                results = torch.sparse.mm(R, self.P)
+            elif args.filter == 2:
+                PP = torch.sparse.mm(self.P, self.P)
+                results = torch.sparse.mm(R, 2 * self.P - PP)
+            elif args.filter == 3:
+                PP = torch.sparse.mm(self.P, self.P)
+                PPP = torch.sparse.mm(PP, self.P)
+                results = torch.sparse.mm(R, self.P + 0.01 * (-PPP + 10 * PP - 29 * self.P))
 
-        # Our model
-        if args.filter == 1:
-            results = R @ (P)
-        elif args.filter == 2:
-            results = R @ (2 * P - P @ P)
-        elif args.filter == 3:
-            results = R @ (P + 0.01 * (-P @ P @ P + 10 * P @ P - 29 * P))
+            rate_matrix = results + (-99999) * R
+            del results, R
+            full_preds = self._mask_predict(rate_matrix.to_dense(), train_mask)
 
-        # Now get the results
-        rate_matrix = results + (-99999) * R
-        full_preds = self._mask_predict(rate_matrix, train_mask)
         return full_preds
 
     def _normalize_sparse_adjacency_matrix(self, adj_matrix, alpha):
-        rowsum = torch.sparse.mm(
-            adj_matrix, torch.ones((adj_matrix.shape[1], 1), device=adj_matrix.device)
-        ).squeeze()
+        row_sum = torch.sparse.sum(adj_matrix, dim=1).to_dense()
+        col_sum = torch.sparse.sum(adj_matrix, dim=0).to_dense()
 
-        rowsum = torch.pow(rowsum, -alpha)
-        
-        colsum = torch.sparse.mm(
-            adj_matrix.t(), torch.ones((adj_matrix.shape[0], 1), device=adj_matrix.device)
-        ).squeeze()
-        
-        colsum = torch.pow(colsum, alpha - 1)
-        
-        indices = (
-            torch.arange(0, rowsum.size(0)).unsqueeze(1).repeat(1, 2).to(adj_matrix.device)
-        )
-        
-        d_mat_rows = torch.sparse_coo_tensor(
-            indices.t(), rowsum, torch.Size([rowsum.size(0), rowsum.size(0)])
-        ).to(device=adj_matrix.device)
-        
-        indices = (
-            torch.arange(0, colsum.size(0)).unsqueeze(1).repeat(1, 2).to(adj_matrix.device)
-        )
-        
-        d_mat_cols = torch.sparse_coo_tensor(
-            indices.t(), colsum, torch.Size([colsum.size(0), colsum.size(0)])
-        ).to(device=adj_matrix.device)
+        row_inv = torch.pow(row_sum, -alpha).to(adj_matrix.device)
+        col_inv = torch.pow(col_sum, alpha - 1).to(adj_matrix.device)
 
-        norm_adj = d_mat_rows.mm(adj_matrix).mm(d_mat_cols)
-        return norm_adj
-    
+        row_diag = torch.sparse_coo_tensor(
+            torch.arange(row_inv.size(0)).repeat(2, 1).to(adj_matrix.device),
+            row_inv,
+            (row_inv.size(0), row_inv.size(0)),
+        ).coalesce()
+
+        col_diag = torch.sparse_coo_tensor(
+            torch.arange(col_inv.size(0)).repeat(2, 1).to(adj_matrix.device),
+            col_inv,
+            (col_inv.size(0), col_inv.size(0)),
+        ).coalesce()
+
+        norm_adj = torch.sparse.mm(row_diag, torch.sparse.mm(adj_matrix, col_diag))
+        return norm_adj.coalesce()
+
     def _convert_sp_mat_to_sp_tensor(self, X):
-        coo = X.tocoo().astype(np.float32)
-        row = torch.Tensor(coo.row).long()
-        col = torch.Tensor(coo.col).long()
+        coo = X.tocoo()
+        row = torch.tensor(coo.row, dtype=torch.long)
+        col = torch.tensor(coo.col, dtype=torch.long)
         index = torch.stack([row, col])
-        data = torch.FloatTensor(coo.data)
-        return torch.sparse_coo_tensor(index, data, torch.Size(coo.shape), dtype=torch.float)
+        data = torch.tensor(coo.data, dtype=torch.float)
+        return torch.sparse_coo_tensor(index, data, torch.Size(coo.shape)).coalesce()
