@@ -125,6 +125,7 @@ def pload(path):
 	print('load path = {} object'.format(path))
 	return res
 
+
 def pstore(x, path):
 	with open(path, 'wb') as f:
 		pickle.dump(x, f)
@@ -136,7 +137,7 @@ def scipy_coo_to_torch_sparse(mat):
     idxs = torch.from_numpy(np.vstack([mat.row, mat.col]).astype(np.int64))
     vals = torch.from_numpy(mat.data.astype(np.float32))
     shape = torch.Size(mat.shape)
-    return torch.sparse.FloatTensor(idxs, vals, shape).to(args.device)
+    return torch.sparse_coo_tensor(idxs, vals, shape, dtype=torch.float32, device=args.device)
 
 
 def cheby(k, x):
@@ -146,6 +147,7 @@ def cheby(k, x):
         return x
     else:
         return 2 * x * cheby(k-1, x) - cheby(k-2, x)
-    
+
+
 def bern(K, k, x):
     return comb(K, k) * (x**k) * ((1-x)**(K-k))
