@@ -144,7 +144,7 @@ def configurate():
     pf_chebii_prefix_parser.add_argument('--ideal_weight', type=float)
     pf_chebii_prefix_parser.add_argument('--nonparam', type=int)
 
-    # PF_ChebII_Prefix
+    # PF_ChebII
     pf_chebii_parser = subparsers.add_parser('pf_chebii', parents=[common_parser], help="pf_chebii model operations")
     pf_chebii_parser.add_argument('--order', type=int)
     pf_chebii_parser.add_argument('--weights', type=str)
@@ -190,12 +190,17 @@ def configurate():
         return [elem_type(x) for x in string.split(",")]
     def is_str(x):
         return isinstance(x, str)
+    
     args.metrics = str_to_list(args.metrics, str) if is_str(args.metrics) else args.metrics
     args.ks = str_to_list(args.ks, int) if is_str(args.ks) else args.ks
     args.criterion = str_to_list(args.criterion, int) if is_str(args.criterion) else args.criterion
     
-    if 'pf' in args.model:
+    # GSP arguments processing
+    if args.model in ['gsp_cutoff', 'gsp_norm', 'gsp_poly']:
         args.coeffs = str_to_list(args.coeffs, float) if is_str(args.coeffs) else args.coeffs
+    
+    # Poly-Filter arguments processing
+    if args.model in ['pf_bern', 'pf_cheb', 'pf_chebii_prefix', 'pf_chebii', 'pf_mono']:
         args.weights = str_to_list(args.weights, float) if is_str(args.weights) else args.weights
     
     # Automatically set args
