@@ -26,6 +26,6 @@ model: afdgcf
 loss: afdloss
 
 # Develop (Specific)
-embed_dim: 128
-layer_num: 3
+embed_dim: 64
+layer_num: 4
 keep_rate: 1.0

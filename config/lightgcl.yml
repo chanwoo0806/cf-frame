@@ -1,0 +1,26 @@
+epoch: 300
+trn_batch: 4096
+tst_batch: 1024
+loss: gclloss
+tst_step: 5
+patience: 10
+rand_seed: 2024
+tensorboard: 0
+
+metrics: [recall, ndcg]
+ks: [10, 20]
+criterion: [1, 1]
+
+dataset: gowalla
+
+embed_dim: 32
+layer_num: 2
+dropout: 0
+
+cl_weight: 0.1
+temp: 0.1
+svd_q: 5
+
+embed_reg: 1.0e-9
+
+lr: 2.0e-3
