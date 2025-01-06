@@ -34,6 +34,47 @@ class BPR:
         return loss, losses
     
 
+# For LightGCL (ICLR 23)
+class GCLLoss:
+    def __init__(self):
+        self.type = 'pairwise'
+        self.temp = args.temp
+        self.embed_reg = args.embed_reg
+        self.cl_weight = args.cl_weight
+
+    def __call__(self, model, batch_data):
+        self.is_training = True
+
+        user_embeds, item_embeds = model.forward()
+        ancs, poss, negs = batch_data
+
+        # compute BPR loss
+        anc_embeds, pos_embeds, neg_embeds = user_embeds[ancs], item_embeds[poss], item_embeds[negs]
+        pos_preds = (anc_embeds * pos_embeds).sum(dim=-1)
+        neg_preds = (anc_embeds * neg_embeds).sum(dim=-1)
+        bpr_loss = torch.sum(F.softplus(neg_preds - pos_preds)) / len(ancs)
+        
+        # compute regularization loss
+        anc_egos, pos_egos, neg_egos = model.user_embeds[ancs], model.item_embeds[poss], model.item_embeds[negs]
+        reg_loss = (anc_egos.norm(2).pow(2) + pos_egos.norm(2).pow(2) + neg_egos.norm(2).pow(2)) / len(ancs)
+        reg_loss *= self.embed_reg * 0.5
+
+        G_u_norm = model.G_u
+        E_u_norm = model.E_u
+        G_i_norm = model.G_i
+        E_i_norm = model.E_i
+        neg_score = torch.log(torch.exp(G_u_norm[ancs] @ E_u_norm.T / self.temp).sum(1) + 1e-8).mean()
+        neg_score += torch.log(torch.exp(G_i_norm[poss] @ E_i_norm.T / self.temp).sum(1) + 1e-8).mean()
+        pos_score = (torch.clamp((G_u_norm[ancs] * E_u_norm[ancs]).sum(1) / self.temp, -5.0, 5.0)).mean() + \
+                    (torch.clamp((G_i_norm[poss] * E_i_norm[poss]).sum(1) / self.temp, -5.0, 5.0)).mean()
+        cl_loss = -pos_score + neg_score
+        cl_loss = self.cl_weight * cl_loss
+
+        loss = bpr_loss + cl_loss + reg_loss
+        losses = {'bpr_loss': bpr_loss, 'reg_loss': reg_loss, 'cl_loss': cl_loss}
+        return loss, losses
+
+
 class AFDLoss:
     def __init__(self):
         self.embed_reg = args.embed_reg

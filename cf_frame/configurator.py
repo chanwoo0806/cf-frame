@@ -51,6 +51,13 @@ def configurate():
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
 
+    # LightGCL
+    lightgcl_parser = subparsers.add_parser('lightgcl', parents=[common_parser], help="lightgcl model operations")
+    lightgcl_parser.add_argument('--svd_q', default=5, type=int, help='For SVD')
+    lightgcl_parser.add_argument('--dropout', default=0, type=float, help='Sparse Dropout')
+    lightgcl_parser.add_argument('--temp', default=0.1, type=float, help='')
+    lightgcl_parser.add_argument('--cl_weight', default=0.1, type=float, help='Graph Contrastive Loss Weight')
+
     # AFDGCF (AFD-LightGCN)
     afdgcf_parser = subparsers.add_parser('afdgcf', parents=[common_parser], help="afdgcf model operations")
     afdgcf_parser.add_argument('--alpha', type=float, default=1e-4, help='Correlation Loss Strength')
