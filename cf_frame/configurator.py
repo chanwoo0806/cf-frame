@@ -10,6 +10,7 @@ def configurate():
     
     common_parser.add_argument('--comment', type=str)
     common_parser.add_argument('--dataset', type=str)
+    common_parser.add_argument('--device', type=str)
     common_parser.add_argument('--loss', type=str)
     common_parser.add_argument('--trainer', type=str)
     
@@ -146,7 +147,7 @@ def configurate():
     args.criterion = str_to_list(args.criterion, int) if is_str(args.criterion) else args.criterion
     
     # Automatically set args
-    args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    args.device = 'cuda' if args.device == 'cuda' and torch.cuda.is_available() else 'cpu'
     args.path = f'./log/' if args.folder is None else f'./log/{args.folder}/'
     args.path += f'{time.strftime("%m%d-%H%M%S")}-{args.comment}'
     

@@ -15,12 +15,14 @@ from time import time
 class SGFCF(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
+        print('SGFCF Start')
         self.freq_matrix = self._convert_sp_mat_to_sp_tensor(data_handler.get_inter()).to_dense().cpu()
         self.get_homo_ratio()
         self.set_filter()
 
     def get_homo_ratio(self):
         # If GPU is available, Use it.
+        print('Run get_homo')
         freq_matrix = self.freq_matrix.to(args.device)
         try:
             homo_ratio_user = pload(f'./dataset/{args.dataset}/homo_ratio_user.tensor')
@@ -65,6 +67,7 @@ class SGFCF(BaseModel):
         self.homo_ratio_item = homo_ratio_item
         
     def set_filter(self):
+        print('Run Set Filter')
         eps = args.eps
         alpha = args.alpha
 
