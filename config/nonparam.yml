@@ -4,7 +4,7 @@ tensorboard: 0
 
 # Test
 metrics: [recall, ndcg]
-ks: [10, 20, 50]
+ks: [10, 20]
 tst_batch: 1024
 
 # Develop (General)

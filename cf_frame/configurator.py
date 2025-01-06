@@ -51,6 +51,13 @@ def configurate():
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
 
+    # LightGCL
+    lightgcl_parser = subparsers.add_parser('lightgcl', parents=[common_parser], help="lightgcl model operations")
+    lightgcl_parser.add_argument('--svd_q', default=5, type=int, help='For SVD')
+    lightgcl_parser.add_argument('--dropout', default=0, type=float, help='Sparse Dropout')
+    lightgcl_parser.add_argument('--temp', default=0.1, type=float, help='')
+    lightgcl_parser.add_argument('--cl_weight', default=0.1, type=float, help='Graph Contrastive Loss Weight')
+
     # AFDGCF (AFD-LightGCN)
     afdgcf_parser = subparsers.add_parser('afdgcf', parents=[common_parser], help="afdgcf model operations")
     afdgcf_parser.add_argument('--alpha', type=float, default=1e-4, help='Correlation Loss Strength')
@@ -120,62 +127,6 @@ def configurate():
     sgfcf_parser.add_argument('--eps', type=float, default=0.5, help='param for G^2N')
     sgfcf_parser.add_argument('--gamma', type=float, default=1.0, help='weight for non-low frequency')
 
-    # PF_Bern
-    pf_bern_parser = subparsers.add_parser('pf_bern', parents=[common_parser], help="pf_bern model operations")
-    pf_bern_parser.add_argument('--order', type=int)
-    pf_bern_parser.add_argument('--weights', type=str)
-    pf_bern_parser.add_argument('--ideal_num', type=int)
-    pf_bern_parser.add_argument('--ideal_weight', type=float)
-    pf_bern_parser.add_argument('--nonparam', type=int)
-
-    # PF_Cheb
-    pf_cheb_parser = subparsers.add_parser('pf_cheb', parents=[common_parser], help="pf_cheb model operations")
-    pf_cheb_parser.add_argument('--order', type=int)
-    pf_cheb_parser.add_argument('--weights', type=str)
-    pf_cheb_parser.add_argument('--ideal_num', type=int)
-    pf_cheb_parser.add_argument('--ideal_weight', type=float)
-    pf_cheb_parser.add_argument('--nonparam', type=int)
-
-    # PF_ChebII_Prefix
-    pf_chebii_prefix_parser = subparsers.add_parser('pf_chebii_prefix', parents=[common_parser], help="pf_chebii_prefix model operations")
-    pf_chebii_prefix_parser.add_argument('--order', type=int)
-    pf_chebii_prefix_parser.add_argument('--weights', type=str)
-    pf_chebii_prefix_parser.add_argument('--ideal_num', type=int)
-    pf_chebii_prefix_parser.add_argument('--ideal_weight', type=float)
-    pf_chebii_prefix_parser.add_argument('--nonparam', type=int)
-
-    # PF_ChebII_Prefix
-    pf_chebii_parser = subparsers.add_parser('pf_chebii', parents=[common_parser], help="pf_chebii model operations")
-    pf_chebii_parser.add_argument('--order', type=int)
-    pf_chebii_parser.add_argument('--weights', type=str)
-    pf_chebii_parser.add_argument('--ideal_num', type=int)
-    pf_chebii_parser.add_argument('--ideal_weight', type=float)
-    pf_chebii_parser.add_argument('--nonparam', type=int)
-
-    # PF_Mono
-    pf_mono_parser = subparsers.add_parser('pf_mono', parents=[common_parser], help="pf_mono model operations")
-    pf_mono_parser.add_argument('--order', type=int)
-    pf_mono_parser.add_argument('--weights', type=str)
-    pf_mono_parser.add_argument('--ideal_num', type=int)
-    pf_mono_parser.add_argument('--ideal_weight', type=float)
-    pf_mono_parser.add_argument('--nonparam', type=int)
-    
-    # GSP_Poly
-    gsp_poly_parser = subparsers.add_parser('gsp_poly', parents=[common_parser], help="gsp_poly model operations")
-    gsp_poly_parser.add_argument('--normalize', type=int)
-    gsp_poly_parser.add_argument('--coeffs', type=str)
-
-    # GSP_Cutoff
-    gsp_cutoff_parser = subparsers.add_parser('gsp_cutoff', parents=[common_parser], help="gsp_cutoff model operations")
-    gsp_cutoff_parser.add_argument('--freq_num', type=int) # Cutoff
-    gsp_cutoff_parser.add_argument('--freq_threshold', type=str) # Cutoff
-    gsp_cutoff_parser.add_argument('--filter', type=str) # Cutoff
-    gsp_cutoff_parser.add_argument('--hyp', type=float) # Cutoff
-    
-    # GSP_Norm
-    gsp_norm_parser = subparsers.add_parser('gsp_norm', parents=[common_parser], help="gsp_norm model operations")
-    gsp_norm_parser.add_argument('--normalize', type=int)
-
     args = parser.parse_args()
     
     # Use default values if args are not given
@@ -193,10 +144,6 @@ def configurate():
     args.metrics = str_to_list(args.metrics, str) if is_str(args.metrics) else args.metrics
     args.ks = str_to_list(args.ks, int) if is_str(args.ks) else args.ks
     args.criterion = str_to_list(args.criterion, int) if is_str(args.criterion) else args.criterion
-    
-    if 'pf' in args.model:
-        args.coeffs = str_to_list(args.coeffs, float) if is_str(args.coeffs) else args.coeffs
-        args.weights = str_to_list(args.weights, float) if is_str(args.weights) else args.weights
     
     # Automatically set args
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
