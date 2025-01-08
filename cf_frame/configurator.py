@@ -41,7 +41,7 @@ def configurate():
     common_parser.add_argument('--keep_rate', type=float)
 
     # loss
-    common_parser.add_argument('--embed_reg', type=float, help='L2 regularization for embeddings')
+    common_parser.add_argument('--reg_weight', type=float, help='L2 regularization for embeddings')
     common_parser.add_argument('--uniform', type=float, help='[DirectAU] weight of uniformity loss')
 
     """ Model Arguments """
@@ -59,7 +59,7 @@ def configurate():
     lightgcl_parser.add_argument('--temp', default=0.1, type=float, help='')
     lightgcl_parser.add_argument('--cl_weight', default=0.1, type=float, help='Graph Contrastive Loss Weight')
 
-    # AFDGCF (AFD-LightGCN)
+    # AFDGCF
     afdgcf_parser = subparsers.add_parser('afdgcf', parents=[common_parser], help="afdgcf model operations")
     afdgcf_parser.add_argument('--alpha', type=float, default=1e-4, help='Correlation Loss Strength')
 
@@ -95,9 +95,11 @@ def configurate():
     ultragcn_parser.add_argument('--w4', type=float)
     ultragcn_parser.add_argument('--negative_num', type=int)
     ultragcn_parser.add_argument('--negative_weight', type=int)
-    ultragcn_parser.add_argument('--gamma', type=float, help='[UltraGCN] loss')
-    ultragcn_parser.add_argument('--lambda_', type=float)
-    ultragcn_parser.add_argument('--sampling_sift_pos', type=bool)
+    ultragcn_parser.add_argument('--gamma', type=float, help='norm_loss (= L2 Regularization)')
+    ultragcn_parser.add_argument('--lambda_', type=float, help='Loss_I')
+    ultragcn_parser.add_argument('--sampling_sift_pos', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
+    ultragcn_parser.add_argument('--num_neighbors', type=int, default=10)
+    ultragcn_parser.add_argument('--ii_diagonal_zero', type=int, default=0)
 
     # GFCF
     gfcf_parser = subparsers.add_parser('gfcf', parents=[common_parser], help="gfcf model operations")
@@ -142,7 +144,6 @@ def configurate():
         return [elem_type(x) for x in string.split(",")]
     def is_str(x):
         return isinstance(x, str)
-    
     args.metrics = str_to_list(args.metrics, str) if is_str(args.metrics) else args.metrics
     args.ks = str_to_list(args.ks, int) if is_str(args.ks) else args.ks
     args.criterion = str_to_list(args.criterion, int) if is_str(args.criterion) else args.criterion

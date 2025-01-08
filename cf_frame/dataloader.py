@@ -7,10 +7,6 @@ from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
-try:
-    import cf_frame.sampling as sampling
-except:
-    print("No CMAKE - We can't use cpp sampling.")
 from cf_frame.util import scipy_coo_to_torch_sparse
 
 
@@ -99,6 +95,7 @@ class MultiNegTrnData(data.Dataset):
         neg_candidates = np.arange(item_num)
         
         if sampling_sift_pos:
+            print('Unable Duplicate Negative Sampling.')
             neg_items = []
             for u in self.rows:
                 probs = np.ones(item_num)
@@ -108,9 +105,9 @@ class MultiNegTrnData(data.Dataset):
                 neg_items.append(u_neg_items)
             neg_items = np.concatenate(neg_items, axis = 0) 
         else:
+            print('Enable Duplicate Negative Sampling.')
             neg_items = np.random.choice(neg_candidates, (len(self.rows), neg_ratio), replace = True)
         self.negs = torch.from_numpy(neg_items)
-        print(self.negs.shape)
         assert self.negs.shape[0] == len(self.rows)
         assert self.negs.shape[1] == neg_ratio
 
@@ -119,35 +116,6 @@ class MultiNegTrnData(data.Dataset):
 
     def __getitem__(self, idx):
         return self.rows[idx], self.cols[idx], self.negs[idx]
-
-      
-class MultiNegTrnData_CPP(data.Dataset):
-    def __init__(self, coomat):
-        self.rows = coomat.row
-        self.cols = coomat.col
-        self.dokmat = coomat.todok()
-        self.neg_num = args.negative_num
-        self.user_num, self.item_num = coomat.shape
-        interacted_items = [list() for _ in range(coomat.shape[0])]
-        for i in range(len(coomat.data)):
-            row = coomat.row[i]
-            col = coomat.col[i]
-            interacted_items[row].append(col)
-        self.interacted_items = interacted_items
-
-    def sample_negs(self):
-        self.result = sampling.sample_negative_ByUser(
-            self.rows,
-            self.item_num,
-            self.interacted_items,
-            self.neg_num
-        )
-
-    def __len__(self):
-        return len(self.rows)
-
-    def __getitem__(self, idx):
-        return self.result[idx, 0], self.result[idx, 1], self.result[idx, 2:]
 
 
 class DataHandler:

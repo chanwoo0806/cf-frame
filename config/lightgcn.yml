@@ -1,6 +1,6 @@
 # Basic
 rand_seed: 2024
-dataset: yelp2018
+dataset: amazon-book
 epoch: 1500
 trn_batch: 2048
 tensorboard: 1
@@ -12,15 +12,15 @@ criterion: [1, 1]
 
 # Test
 metrics: [recall, ndcg]
-ks: [10, 20, 50]
+ks: [10, 20]
 tst_batch: 1024
 
 # Tunable
-embed_reg: 1.0e-4
+reg_weight: 1.0e-4
 lr: 1.0e-3
 
 # Develop (General)
-comment: lightgcn-reprod
+comment: lightgcn
 summary: lightgcn
 model: lightgcn
 loss: bpr
