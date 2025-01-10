@@ -130,6 +130,11 @@ def configurate():
     sgfcf_parser.add_argument('--eps', type=float, default=0.5, help='param for G^2N')
     sgfcf_parser.add_argument('--gamma', type=float, default=1.0, help='weight for non-low frequency')
 
+    # JGCF
+    jgcf_parser = subparsers.add_parser('jgcf', parents=[common_parser], help='JGCF')
+    jgcf_parser.add_argument()
+    jgcf_parser.add_argument()
+
     args = parser.parse_args()
     
     # Use default values if args are not given

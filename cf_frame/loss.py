@@ -135,8 +135,6 @@ class GCLLoss:
 
 
 
-
-
 # DirectAU (KDD 22)
 class DirectAU:
     def __init__(self):
