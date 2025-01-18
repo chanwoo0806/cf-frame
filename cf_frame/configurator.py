@@ -50,6 +50,9 @@ def configurate():
 
     # MF
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
+
+    # GTE
+    gte_parser = subparsers.add_parser('gte', parents=[common_parser], help="gte model operations")
     
     # NeuMF
     neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NGCF model operations")
