@@ -48,19 +48,21 @@ def configurate():
     parser = argparse.ArgumentParser(description='Main parser')
     subparsers = parser.add_subparsers(dest='model', help="Model selection")
 
-    # NGCF #
-    ngcf_parser = subparsers.add_parser('ngcf', parents=[common_parser], help="NGCF model operations")
-    ngcf_parser.add_argument('--weight_size', default=[64, 64, 64], type=list)
-    ngcf_parser.add_argument('--dropout_rates', default=[0.1, 0.1, 0.1], type=list)
-
-    # NeuMF #
+    # MF
+    mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
+    
+    # NeuMF
     neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NGCF model operations")
     neumf_parser.add_argument('--dropout', default=0.1, type=float)
     neumf_parser.add_argument('--negative_num', type=int)
 
-    # LightGCN & MF
+    # NGCF
+    ngcf_parser = subparsers.add_parser('ngcf', parents=[common_parser], help="NGCF model operations")
+    ngcf_parser.add_argument('--weight_size', default=[64, 64, 64], type=list)
+    ngcf_parser.add_argument('--dropout_rates', default=[0.1, 0.1, 0.1], type=list)
+
+    # LightGCN
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
-    mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
 
     # LightGCL
     lightgcl_parser = subparsers.add_parser('lightgcl', parents=[common_parser], help="lightgcl model operations")
@@ -119,18 +121,6 @@ def configurate():
     pgsp_parser = subparsers.add_parser('pgsp', parents=[common_parser], help="pgsp model operations")
     pgsp_parser.add_argument('--ideal', type=float, help='weight of ideal low-pass filter')
     
-    # SimpleX
-    simplex_parser = subparsers.add_parser('simplex', parents=[common_parser], help="simplex model operations")
-    simplex_parser.add_argument('--neg_num', type=int, help='The number of negative sampling in `MultiNegTrnData`.')
-    simplex_parser.add_argument('--score', type=str, help='Possible: [cosine, dot]')
-    simplex_parser.add_argument('--aggregator', type=str, help='Possible: [mean, user_attention, self_attention]')
-    simplex_parser.add_argument('--fusing_weight', type=float)
-    simplex_parser.add_argument('--attention_dropout', type=float)
-    simplex_parser.add_argument('--history_num', type=int)
-    simplex_parser.add_argument('--dropout', type=int)
-    simplex_parser.add_argument('--neg_weight', type=float)
-    simplex_parser.add_argument('--margin', type=float)
-
     # SGFCF
     sgfcf_parser = subparsers.add_parser('sgfcf', parents=[common_parser], help="sgfcf model operations")
     sgfcf_parser.add_argument('--k', type=int, default=100, help='The number of required features')  
