@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import torch.nn.functional as F
 from cf_frame.util import pload, pstore
 from cf_frame.configurator import args
@@ -7,6 +8,41 @@ from cf_frame.configurator import args
 class NonParam:
     def __init__(self):
         self.type = 'nonparam'
+
+
+# MultiVAE Loss
+class VAELoss:
+    def __init__(self, anneal=1.0):
+        self.anneal = anneal
+
+    def __call__(self, model, batch_data):
+        recon_x, x, mu, logvar = model.forward()
+        # Compute reconstruction loss (BCE)
+        bce_loss = -torch.mean(torch.sum(F.log_softmax(recon_x, dim=1) * x, dim=-1))
+
+        # Compute KL divergence loss
+        kld_loss = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+
+        # Combine losses
+        total_loss = bce_loss + self.anneal * kld_loss
+        losses = {'bce_loss': bce_loss, 'kld_loss': kld_loss}
+
+        return total_loss, losses
+
+
+# Binary Cross Entropy
+class BCE:
+    def __init__(self):
+        self.reg_weight = args.reg_weight
+        self.loss_fn = nn.BCEWithLogitsLoss()
+        self.type = 'bce'
+
+    def __call__(self, model, batch_data):
+        users, items, labels = batch_data
+        preds = model.forward(users, items)
+        loss = self.loss_fn(preds, labels.to(dtype=torch.float32))
+        losses = {'loss': loss}
+        return loss, losses
 
 
 # AFDGCF (SIGIR 24)

@@ -48,6 +48,16 @@ def configurate():
     parser = argparse.ArgumentParser(description='Main parser')
     subparsers = parser.add_subparsers(dest='model', help="Model selection")
 
+    # NGCF #
+    ngcf_parser = subparsers.add_parser('ngcf', parents=[common_parser], help="NGCF model operations")
+    ngcf_parser.add_argument('--weight_size', default=[64, 64, 64], type=list)
+    ngcf_parser.add_argument('--dropout_rates', default=[0.1, 0.1, 0.1], type=list)
+
+    # NeuMF #
+    neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NGCF model operations")
+    neumf_parser.add_argument('--dropout', default=0.1, type=float)
+    neumf_parser.add_argument('--negative_num', type=int)
+
     # LightGCN & MF
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
@@ -68,7 +78,7 @@ def configurate():
     turbocf_parser.add_argument("--dense", action='store_true', default=True, help="Sparse Operations")
     turbocf_parser.add_argument("--alpha", type=float, default=0.5, help="For normalization of R")
     turbocf_parser.add_argument("--power", type=float, default=1, help="For normalization of P")
-    turbocf_parser.add_argument("--filter", type=float, default=1, help="1:linear, 2: 2nd-order, 3: Poly.approx of ideal LPF")
+    turbocf_parser.add_argument("--filter", type=float, default=1, help="1: linear, 2: 2nd-order, 3: Poly.approx of ideal LPF")
     
     # BSPM
     bspm_parser = subparsers.add_parser('bspm', parents=[common_parser], help="bspm model operations")
@@ -132,8 +142,9 @@ def configurate():
 
     # JGCF
     jgcf_parser = subparsers.add_parser('jgcf', parents=[common_parser], help='JGCF')
-    jgcf_parser.add_argument()
-    jgcf_parser.add_argument()
+    jgcf_parser.add_argument('--a', type=float, default=1.0)
+    jgcf_parser.add_argument('--b', type=float, default=1.0)
+    jgcf_parser.add_argument('--alpha', type=float, default=0.1)
 
     args = parser.parse_args()
     
