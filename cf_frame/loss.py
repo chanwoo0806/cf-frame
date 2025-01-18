@@ -9,6 +9,7 @@ class NonParam:
     def __init__(self):
         self.type = 'nonparam'
 
+
 # MultiVAE Loss
 class VAELoss:
     def __init__(self, anneal=1.0):

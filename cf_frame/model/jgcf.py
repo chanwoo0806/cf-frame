@@ -37,14 +37,6 @@ def JacobiConv(L, xs, adj, alphas, a=1.0, b=1.0, l=-1.0, r=1.0):
 
 
 class PolyConvFrame(nn.Module):
-    '''
-    A framework for polynomial graph signal filter.
-    Args:
-        conv_fn: the filter function, like PowerConv, LegendreConv,...
-        depth (int): the order of polynomial.
-        alpha (float):  the parameter to initialize polynomial coefficients.
-        fixed (bool): whether or not to fix to polynomial coefficients.
-    '''
     def __init__(self, conv_fn, depth=3, alpha=1.0, fixed=True):
         super().__init__()
         self.depth = depth
