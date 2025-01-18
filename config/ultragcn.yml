@@ -1,0 +1,21 @@
+# Basic
+tensorboard: 0
+rand_seed: 2024
+
+# Model
+model: ultragcn
+loss: layerskiploss
+
+# Train
+trn_batch: 1024
+epoch: 2000
+embed_dim: 64
+lr: 1.0e-3
+
+# Test
+metrics: [recall, ndcg]
+ks: [10, 20]
+criterion: [1, 1]
+tst_step: 5
+patience: 10
+tst_batch: 2048

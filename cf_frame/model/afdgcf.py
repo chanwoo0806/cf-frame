@@ -5,12 +5,10 @@ from cf_frame.module import EdgeDrop
 from cf_frame.configurator import args
 from cf_frame.util import scipy_coo_to_torch_sparse
 
-
 init = nn.init.xavier_uniform_
 uniformInit = nn.init.uniform
 
 class AFDGCF(BaseModel):
-    # Equivalent to LightGCN.
     def __init__(self, data_handler):
         super().__init__(data_handler)
 
@@ -40,8 +38,8 @@ class AFDGCF(BaseModel):
             embeds = self._propagate(adj, embeds_list[-1])
             embeds_list.append(embeds)
         embeds = torch.stack(embeds_list, dim=0).mean(dim=0)
+        self.embeds_list = embeds_list  # Only Difference.
         self.final_embeds = embeds
-        self.embeds_list = embeds_list
         return embeds[:self.user_num], embeds[self.user_num:]
 
     def full_predict(self, batch_data):
@@ -54,3 +52,4 @@ class AFDGCF(BaseModel):
         full_preds = pck_user_embeds @ item_embeds.T
         full_preds = self._mask_predict(full_preds, train_mask)
         return full_preds
+    

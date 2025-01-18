@@ -41,12 +41,22 @@ def configurate():
     common_parser.add_argument('--keep_rate', type=float)
 
     # loss
-    common_parser.add_argument('--embed_reg', type=float, help='L2 regularization for embeddings')
+    common_parser.add_argument('--reg_weight', type=float, help='L2 regularization for embeddings')
     common_parser.add_argument('--uniform', type=float, help='[DirectAU] weight of uniformity loss')
 
     """ Model Arguments """
     parser = argparse.ArgumentParser(description='Main parser')
     subparsers = parser.add_subparsers(dest='model', help="Model selection")
+
+    # NGCF #
+    ngcf_parser = subparsers.add_parser('ngcf', parents=[common_parser], help="NGCF model operations")
+    ngcf_parser.add_argument('--weight_size', default=[64, 64, 64], type=list)
+    ngcf_parser.add_argument('--dropout_rates', default=[0.1, 0.1, 0.1], type=list)
+
+    # NeuMF #
+    neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NGCF model operations")
+    neumf_parser.add_argument('--dropout', default=0.1, type=float)
+    neumf_parser.add_argument('--negative_num', type=int)
 
     # LightGCN & MF
     lightgcn_parser = subparsers.add_parser('lightgcn', parents=[common_parser], help="lightgcn model operations")
@@ -59,7 +69,7 @@ def configurate():
     lightgcl_parser.add_argument('--temp', default=0.1, type=float, help='')
     lightgcl_parser.add_argument('--cl_weight', default=0.1, type=float, help='Graph Contrastive Loss Weight')
 
-    # AFDGCF (AFD-LightGCN)
+    # AFDGCF
     afdgcf_parser = subparsers.add_parser('afdgcf', parents=[common_parser], help="afdgcf model operations")
     afdgcf_parser.add_argument('--alpha', type=float, default=1e-4, help='Correlation Loss Strength')
 
@@ -68,7 +78,7 @@ def configurate():
     turbocf_parser.add_argument("--dense", action='store_true', default=True, help="Sparse Operations")
     turbocf_parser.add_argument("--alpha", type=float, default=0.5, help="For normalization of R")
     turbocf_parser.add_argument("--power", type=float, default=1, help="For normalization of P")
-    turbocf_parser.add_argument("--filter", type=float, default=1, help="1:linear, 2: 2nd-order, 3: Poly.approx of ideal LPF")
+    turbocf_parser.add_argument("--filter", type=float, default=1, help="1: linear, 2: 2nd-order, 3: Poly.approx of ideal LPF")
     
     # BSPM
     bspm_parser = subparsers.add_parser('bspm', parents=[common_parser], help="bspm model operations")
@@ -95,9 +105,11 @@ def configurate():
     ultragcn_parser.add_argument('--w4', type=float)
     ultragcn_parser.add_argument('--negative_num', type=int)
     ultragcn_parser.add_argument('--negative_weight', type=int)
-    ultragcn_parser.add_argument('--gamma', type=float, help='[UltraGCN] loss')
-    ultragcn_parser.add_argument('--lambda_', type=float)
-    ultragcn_parser.add_argument('--sampling_sift_pos', type=bool)
+    ultragcn_parser.add_argument('--gamma', type=float, help='norm_loss (= L2 Regularization)')
+    ultragcn_parser.add_argument('--lambda_', type=float, help='Loss_I')
+    ultragcn_parser.add_argument('--sampling_sift_pos', type=lambda x: x.lower() in ('true', '1'), default=False, choices=[True, False])
+    ultragcn_parser.add_argument('--num_neighbors', type=int, default=10)
+    ultragcn_parser.add_argument('--ii_diagonal_zero', type=int, default=0)
 
     # GFCF
     gfcf_parser = subparsers.add_parser('gfcf', parents=[common_parser], help="gfcf model operations")
@@ -127,6 +139,12 @@ def configurate():
     sgfcf_parser.add_argument('--alpha', type=float, default=0.0, help='param for G^2N')
     sgfcf_parser.add_argument('--eps', type=float, default=0.5, help='param for G^2N')
     sgfcf_parser.add_argument('--gamma', type=float, default=1.0, help='weight for non-low frequency')
+
+    # JGCF
+    jgcf_parser = subparsers.add_parser('jgcf', parents=[common_parser], help='JGCF')
+    jgcf_parser.add_argument('--a', type=float, default=1.0)
+    jgcf_parser.add_argument('--b', type=float, default=1.0)
+    jgcf_parser.add_argument('--alpha', type=float, default=0.1)
 
     args = parser.parse_args()
     

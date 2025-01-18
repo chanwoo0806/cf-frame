@@ -7,11 +7,54 @@ from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
-try:
-    import cf_frame.sampling as sampling
-except:
-    print("No CMAKE - We can't use cpp sampling.")
 from cf_frame.util import scipy_coo_to_torch_sparse
+
+
+class BinaryCrossEntropyData(data.Dataset):
+    def __init__(self, coomat, is_training=True):
+        self.user_num = coomat.shape[0]
+        self.item_num = coomat.shape[1]
+        self.negative_num = args.negative_num
+        self.is_training = is_training
+        
+        self.rows = coomat.row
+        self.cols = coomat.col
+        self.dokmat = coomat.todok()
+
+        self.labels = [0 for _ in range(len(self.rows))]
+        self.features_ps = np.vstack((coomat.row, coomat.col)).T.tolist()
+
+    def sample_negs(self):
+        assert self.is_training, 'no need to sampling when testing'
+
+        self.features_ng = []
+        for i in range(len(self.rows)):
+            u = self.rows[i]
+            for t in range(self.negative_num):
+                j = np.random.randint(self.item_num)
+                while (u, j) in self.dokmat:
+                    j = np.random.randint(self.item_num)
+                self.features_ng.append([u, j])
+
+        labels_ps = [1 for _ in range(len(self.features_ps))]
+        labels_ng = [0 for _ in range(len(self.features_ng))]
+
+        self.features_fill = self.features_ps + self.features_ng
+        self.labels_fill = labels_ps + labels_ng
+
+    def __len__(self):
+        return (self.negative_num + 1) * len(self.labels)
+
+    def __getitem__(self, idx):
+        features = self.features_fill if self.is_training \
+                    else self.features_ps
+        labels = self.labels_fill if self.is_training \
+                    else self.labels
+
+        user = features[idx][0]
+        item = features[idx][1]
+        label = labels[idx]
+        return user, item ,label
 
 
 class PairwiseTrnData(data.Dataset):
@@ -99,6 +142,7 @@ class MultiNegTrnData(data.Dataset):
         neg_candidates = np.arange(item_num)
         
         if sampling_sift_pos:
+            print('Unable Duplicate Negative Sampling.')
             neg_items = []
             for u in self.rows:
                 probs = np.ones(item_num)
@@ -108,9 +152,9 @@ class MultiNegTrnData(data.Dataset):
                 neg_items.append(u_neg_items)
             neg_items = np.concatenate(neg_items, axis = 0) 
         else:
+            print('Enable Duplicate Negative Sampling.')
             neg_items = np.random.choice(neg_candidates, (len(self.rows), neg_ratio), replace = True)
         self.negs = torch.from_numpy(neg_items)
-        print(self.negs.shape)
         assert self.negs.shape[0] == len(self.rows)
         assert self.negs.shape[1] == neg_ratio
 
@@ -119,35 +163,6 @@ class MultiNegTrnData(data.Dataset):
 
     def __getitem__(self, idx):
         return self.rows[idx], self.cols[idx], self.negs[idx]
-
-      
-class MultiNegTrnData_CPP(data.Dataset):
-    def __init__(self, coomat):
-        self.rows = coomat.row
-        self.cols = coomat.col
-        self.dokmat = coomat.todok()
-        self.neg_num = args.negative_num
-        self.user_num, self.item_num = coomat.shape
-        interacted_items = [list() for _ in range(coomat.shape[0])]
-        for i in range(len(coomat.data)):
-            row = coomat.row[i]
-            col = coomat.col[i]
-            interacted_items[row].append(col)
-        self.interacted_items = interacted_items
-
-    def sample_negs(self):
-        self.result = sampling.sample_negative_ByUser(
-            self.rows,
-            self.item_num,
-            self.interacted_items,
-            self.neg_num
-        )
-
-    def __len__(self):
-        return len(self.rows)
-
-    def __getitem__(self, idx):
-        return self.result[idx, 0], self.result[idx, 1], self.result[idx, 2:]
 
 
 class DataHandler:
@@ -190,10 +205,13 @@ class DataHandler:
             trn_data = MultiNegTrnData(trn_mat)
         elif self.loss_type == 'multineg_cpp':
             trn_data = MultiNegTrnData_CPP(trn_mat)
+        elif self.loss_type == 'bce':
+            trn_data = BinaryCrossEntropyData(trn_mat)
         elif self.loss_type == 'nonparam':
             pass
         else:
             raise NotImplementedError
+
         val_data = AllRankTstData(val_mat, trn_mat)
         tst_data = AllRankTstData(tst_mat, trn_mat)
         

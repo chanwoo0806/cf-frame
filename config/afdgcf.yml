@@ -2,7 +2,7 @@
 rand_seed: 2024
 dataset: yelp2018
 epoch: 1500
-trn_batch: 2048
+trn_batch: 4096
 tensorboard: 1
 
 # Early-stop
@@ -16,8 +16,9 @@ ks: [10, 20]
 tst_batch: 1024
 
 # Tunable
-embed_reg: 1.0e-4
+reg_weight: 1.0e-4
 lr: 1.0e-3
+keep_rate: 1.0
 
 # Develop (General)
 comment: afdgcf
@@ -26,6 +27,5 @@ model: afdgcf
 loss: afdloss
 
 # Develop (Specific)
-embed_dim: 64
-layer_num: 4
-keep_rate: 1.0
+embed_dim: 128
+layer_num: 3

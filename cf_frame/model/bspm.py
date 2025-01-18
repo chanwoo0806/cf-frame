@@ -10,6 +10,8 @@ from torchdiffeq import odeint
 class BSPM(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)
+
+        print('Load')
         self.adj_mat = data_handler.get_inter().tolil()  
 
         self.device = args.device
@@ -36,8 +38,10 @@ class BSPM(BaseModel):
         print("idl time: ",self.idl_times)
         print("blur time: ",self.blurring_times)
         print("sharpen time: ",self.sharpening_times)
+        self.set_filter()
 
     def set_filter(self):
+        print('Set filter')
         adj_mat = self.adj_mat
         rowsum = np.array(adj_mat.sum(axis=1))
         d_inv = np.power(rowsum, -0.5).flatten()
