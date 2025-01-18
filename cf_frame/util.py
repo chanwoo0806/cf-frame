@@ -8,6 +8,7 @@ import pickle
 from cf_frame.configurator import args
 from scipy.special import comb
 
+
 def init_seed():
     if args.rand_seed is not None:
         seed = args.rand_seed
@@ -19,6 +20,7 @@ def init_seed():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
         
+
 def build_model(data_handler):
     module_path = f'cf_frame.model.{args.model}'
     module = importlib.import_module(module_path)
@@ -26,6 +28,7 @@ def build_model(data_handler):
         if attr.lower() == args.model.lower():
             return getattr(module, attr)(data_handler)
     raise NotImplementedError(f'No model named {args.model} in {module_path}')
+
 
 def build_loss():
     module_path = f'cf_frame.loss'
@@ -35,6 +38,7 @@ def build_loss():
             return getattr(module, attr)()
     raise NotImplementedError(f'No loss named {args.loss} in {module_path}')
     
+
 def build_trainer(data_handler, logger, loss):
     if args.trainer is None:
         module_path = 'cf_frame.trainer'
@@ -48,6 +52,7 @@ def build_trainer(data_handler, logger, loss):
                 return getattr(module, attr)(data_handler, logger, loss)
         raise NotImplementedError(f'No trainer named {args.trainer} in {module_path}')
 
+
 def log_exceptions(func):
     def wrapper(*args, **kwargs):
         logger = logging.getLogger('train_logger')
@@ -57,6 +62,7 @@ def log_exceptions(func):
             logger.exception(e)
             raise e
     return wrapper
+
 
 class Logger:
     def __init__(self):
@@ -110,6 +116,7 @@ class Logger:
                     message += f'{result[i]:.4f},'
             f.write(message[:-1] + '\n')
      
+
 class DisabledSummaryWriter:
     def __init__(*args, **kwargs):
         pass
@@ -138,16 +145,3 @@ def scipy_coo_to_torch_sparse(mat):
     vals = torch.from_numpy(mat.data.astype(np.float32))
     shape = torch.Size(mat.shape)
     return torch.sparse_coo_tensor(idxs, vals, shape, dtype=torch.float32, device=args.device)
-
-
-def cheby(k, x):
-    if k == 0:
-        return 1 if not isinstance(x, np.ndarray) else np.ones_like(x)
-    elif k == 1:
-        return x
-    else:
-        return 2 * x * cheby(k-1, x) - cheby(k-2, x)
-
-
-def bern(K, k, x):
-    return comb(K, k) * (x**k) * ((1-x)**(K-k))

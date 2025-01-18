@@ -1,12 +1,11 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
+
 from cf_frame.model import BaseModel
 from cf_frame.module import EdgeDrop
 from cf_frame.configurator import args
 from cf_frame.util import scipy_coo_to_torch_sparse
-
-import torch.sparse as sparse
-import torch.nn.functional as F
 
 init = nn.init.xavier_uniform_
 uniformInit = nn.init.uniform

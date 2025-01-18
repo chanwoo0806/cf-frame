@@ -5,6 +5,7 @@ from scipy.sparse.linalg import svds
 from cf_frame.model import BaseModel
 from cf_frame.configurator import args
 
+
 class GFCF(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)

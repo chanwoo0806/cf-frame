@@ -1,12 +1,11 @@
+import numpy as np
 import torch
 from torch import nn
 from cf_frame.model import BaseModel
 from cf_frame.configurator import args
-from cf_frame.util import scipy_coo_to_torch_sparse
-import numpy as np
-
 
 init = nn.init.xavier_uniform_
+
 
 class UltraGCN(BaseModel):
     def __init__(self, data_handler):

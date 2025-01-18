@@ -2,12 +2,10 @@ import os
 import pickle
 import numpy as np
 import scipy.sparse as sp
-from scipy.sparse.linalg import svds
 from scipy.sparse import csr_matrix, coo_matrix
 import torch
 import torch.utils.data as data
 from cf_frame.configurator import args
-from cf_frame.util import scipy_coo_to_torch_sparse
 
 
 class BinaryCrossEntropyData(data.Dataset):
@@ -203,8 +201,6 @@ class DataHandler:
             trn_data = PointwiseTrnData(trn_mat)
         elif self.loss_type == 'multineg':
             trn_data = MultiNegTrnData(trn_mat)
-        elif self.loss_type == 'multineg_cpp':
-            trn_data = MultiNegTrnData_CPP(trn_mat)
         elif self.loss_type == 'bce':
             trn_data = BinaryCrossEntropyData(trn_mat)
         elif self.loss_type == 'nonparam':
@@ -253,55 +249,3 @@ class DataHandler:
         d_inv_sqrt_mat = sp.diags(d_inv_sqrt) # D^(-0.5)
         norm_adj = adj.dot(d_inv_sqrt_mat).transpose().dot(d_inv_sqrt_mat).tocoo() # D^(-0.5) * A * D^(-0.5)
         return norm_adj
-
-    ##################################################
-    ### Methods for Graph Polynomial Filter Models ###
-    ##################################################
-
-    def pf_set_inter(self):
-        self.inter = self.get_inter().tocsr() # scipy.sparse.csr
-        norm_inter = self.get_normalized_inter()
-        self.norm_inter = scipy_coo_to_torch_sparse(norm_inter) # torch.sparse.FloatTensor
-        if 'mask' in args.loss.lower():
-            self.inter_dok = self.get_inter().todok() # scipy.sparse.dok
-            self.norm_inter_dok = self.get_normalized_inter().todok() # scipy.sparse.dok
-    
-    def pf_set_ideal(self):
-        path = f'./dataset/{args.dataset}/svd/v_full.npy'
-        if os.path.exists(path):
-            v = np.load(path)[:, :args.ideal_num] # caveat: singular vectors need to be sorted in ascending order
-            self.ideal = torch.tensor(v).to(args.device)
-        else:
-            norm_inter = self.get_normalized_norm_inter()
-            u, s, v = svds(norm_inter, which='LM', k=args.ideal_num, random_state=args.rand_seed) # SVD for k largest singular vals
-            self.ideal = torch.tensor(v.T).to(args.device)
-            
-    def pf_get_masked_inter(self, row_indices, col_indices):
-        return self._mask_mat(self.inter_dok, row_indices, col_indices, rescale=False).tocsr() # scipy.sparse.csr
-    
-    def pf_get_masked_norm_inter(self, row_indices, col_indices, renormalize=True):
-        if renormalize:
-            norm_inter = self._mask_mat(self.inter_dok, row_indices, col_indices, rescale=False)
-            norm_inter = self.get_normalized_inter(norm_inter)
-        else:
-            norm_inter = self._mask_mat(self.norm_inter_dok, row_indices, col_indices, rescale=True)
-        return scipy_coo_to_torch_sparse(norm_inter) # torch.sparse.FloatTensor      
-
-    def _mask_mat(self, mat, row_indices, col_indices, rescale):
-        '''
-        Args:
-            mat: scipy.sparse.dok_matrix
-            row_indices: list of row indices to mask (torch.IntTensor)
-            col_indices: list of column indices to mask (torch.IntTensor)
-        Returns:
-            scipy.sparse.coo_matrix
-        '''
-        before = mat.nnz  
-        for row_idx, col_idx in zip(row_indices.tolist(), col_indices.tolist()):
-            mat[(row_idx, col_idx)] = 0.0
-        after = mat.nnz
-        mat = mat.tocoo()
-        if rescale:
-            keep_ratio = after / before
-            mat /= keep_ratio
-        return mat

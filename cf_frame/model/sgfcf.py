@@ -157,8 +157,6 @@ class SGFCF(BaseModel):
         x_max = homo_ratio.max()
 
         homo_weight = (y_max - y_min) / (x_max - x_min) * homo_ratio + (x_max * y_min - y_max * x_min) / (x_max - x_min)
-        
-        # NumPy version of `value.pow(homo_weight.unsqueeze(1))`
         homo_weight = np.expand_dims(homo_weight, axis=1)  # (N, 1) for broadcasting
         result = np.power(value, homo_weight)
         return result

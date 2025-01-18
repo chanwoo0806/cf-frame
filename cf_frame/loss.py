@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from cf_frame.util import pload, pstore
 from cf_frame.configurator import args
+
 
 # Graph Signal Processing
 class NonParam:
@@ -170,7 +170,6 @@ class GCLLoss:
         return loss, losses
 
 
-
 # DirectAU (KDD 22)
 class DirectAU:
     def __init__(self):
@@ -281,48 +280,3 @@ class LayerSkipLoss:
             'norm_loss': norm_loss
         }
         return loss, losses
-    
-
-# SimpleX (CIKM 21)
-class CCL:
-    def __init__(self):
-        self.neg_weight = args.neg_weight
-        self.margin = args.margin
-        self.embed_reg = args.embed_reg
-        self.type = 'multineg_cpp'
-
-    def _positive_loss(self, user_embeds, pos_embeds):
-        pos_score = F.cosine_similarity(user_embeds, pos_embeds)
-        pos_loss = (1 - pos_score).mean()
-        return pos_loss
-
-    def _negative_loss(self, user_embeds, neg_embeds):
-        expanded_user_embeds = user_embeds.unsqueeze(-1).repeat(1, 1, args.negative_num)
-        neg_scores = F.cosine_similarity(expanded_user_embeds, neg_embeds, dim=1)
-        neg_loss = torch.clip(neg_scores - self.margin, min=0)
-        neg_loss = (self.neg_weight / args.negative_num) * neg_loss.mean()
-        return neg_loss
-    
-    def _l2_regularization(self, model):
-        loss = 0.0
-        for parameter in model.parameters():
-            loss += torch.sum(parameter ** 2)
-        return loss / 2
-
-    def __call__(self, model, batch_data):
-        ancs, poss, negs = batch_data
-        user_embeds, item_embeds = model.forward()
-        
-        anc_embeds = user_embeds[ancs]
-        pos_embeds = item_embeds[poss]
-        neg_embeds = item_embeds[negs].permute(dims=(0, 2, 1))  # Batch x Dimension x Negative
-
-        pos_loss = self._positive_loss(anc_embeds, pos_embeds)
-        neg_loss = self._negative_loss(anc_embeds, neg_embeds)
-        reg_loss = self._l2_regularization(model)
-
-        loss = pos_loss + neg_loss + self.embed_reg * reg_loss
-
-        losses = {'ccl': loss, 'pos': pos_loss, 'neg': neg_loss, 'reg': reg_loss}        
-        return loss, losses
-    

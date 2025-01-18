@@ -2,5 +2,4 @@ __pycache__/
 log/
 log_slurm/
 .DS_Store
-*.sh
 *.npy

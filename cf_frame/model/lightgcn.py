@@ -8,6 +8,7 @@ from cf_frame.util import scipy_coo_to_torch_sparse
 init = nn.init.xavier_uniform_
 uniformInit = nn.init.uniform
 
+
 class LightGCN(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)

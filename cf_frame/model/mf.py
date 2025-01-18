@@ -5,6 +5,7 @@ from cf_frame.configurator import args
 
 init = nn.init.xavier_uniform_
 
+
 class MF(BaseModel):
     def __init__(self, data_handler):
         super().__init__(data_handler)

@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from cf_frame.model import BaseModel
 from cf_frame.configurator import args
-from cf_frame.util import scipy_coo_to_torch_sparse
 
 
 class NeuMF(BaseModel):
