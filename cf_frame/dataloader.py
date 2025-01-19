@@ -8,6 +8,19 @@ import torch.utils.data as data
 from cf_frame.configurator import args
 
 
+class UserOnlyTrnData(data.Dataset):
+    def __init__(self, coomat):
+        self.user_num = coomat.shape[0]
+        self.item_num = coomat.shape[1]
+        self.user_vec = np.array(list(range(0, self.user_num)))
+    
+    def __len__(self):
+        return self.user_num
+    
+    def __getitem__(self, idx):
+        return self.user_vec[idx]
+
+
 class BinaryCrossEntropyData(data.Dataset):
     def __init__(self, coomat, is_training=True):
         self.user_num = coomat.shape[0]
@@ -203,6 +216,8 @@ class DataHandler:
             trn_data = MultiNegTrnData(trn_mat)
         elif self.loss_type == 'bce':
             trn_data = BinaryCrossEntropyData(trn_mat)
+        elif self.loss_type == 'useronly':
+            trn_data = UserOnlyTrnData(trn_mat)
         elif self.loss_type == 'nonparam':
             pass
         else:

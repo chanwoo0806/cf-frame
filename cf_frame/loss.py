@@ -12,22 +12,35 @@ class NonParam:
 
 # MultiVAE Loss
 class VAELoss:
-    def __init__(self, anneal=1.0):
-        self.anneal = anneal
+    def __init__(self):
+        self.type = 'vae'
+        self.update = 0
+        self.anneal_cap = args.anneal_cap
+        self.total_anneal_steps = args.total_anneal_steps
 
     def __call__(self, model, batch_data):
-        recon_x, x, mu, logvar = model.forward()
-        # Compute reconstruction loss (BCE)
-        bce_loss = -torch.mean(torch.sum(F.log_softmax(recon_x, dim=1) * x, dim=-1))
+        user = batch_data
 
-        # Compute KL divergence loss
-        kld_loss = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+        self.update += 1
+        if self.total_anneal_steps > 0:
+            anneal = min(self.anneal_cap, 1.0 * self.update / self.total_anneal_steps)
+        else:
+            anneal = self.anneal_cap
 
-        # Combine losses
-        total_loss = bce_loss + self.anneal * kld_loss
-        losses = {'bce_loss': bce_loss, 'kld_loss': kld_loss}
+        z, mu, logvar = model.forward(user)
 
-        return total_loss, losses
+        kl_loss = (
+            -0.5
+            * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+            * anneal
+        )
+
+        rating_matrix = model.R[user]
+        ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1).mean()
+
+        loss = ce_loss + kl_loss
+        losses = {'loss': loss, 'CrossEntropy': ce_loss, 'KL-divergence': kl_loss}
+        return loss, losses
 
 
 # Binary Cross Entropy

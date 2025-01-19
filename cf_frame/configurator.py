@@ -48,6 +48,14 @@ def configurate():
     parser = argparse.ArgumentParser(description='Main parser')
     subparsers = parser.add_subparsers(dest='model', help="Model selection")
 
+    # MultiVAE
+    multivae_parser = subparsers.add_parser('multivae', parents=[common_parser], help='MultiVAE model operations')
+    multivae_parser.add_argument('--mlp_hidden_size', default=3, type=int)
+    multivae_parser.add_argument('--latent_dimension', default=256, type=int)
+    multivae_parser.add_argument('--dropout_prob', default=0.0, type=float)
+    multivae_parser.add_argument('--anneal_cap')
+    multivae_parser.add_argument('--total_anneal_steps')
+
     # MF
     mf_parser = subparsers.add_parser('mf', parents=[common_parser], help="mf model operations")
 
