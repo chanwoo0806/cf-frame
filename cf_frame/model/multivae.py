@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 from cf_frame.model import BaseModel
 from cf_frame.configurator import args
+from cf_frame.util import scipy_coo_to_torch_sparse
 
 
 class MultiVAE(BaseModel):
@@ -13,15 +14,25 @@ class MultiVAE(BaseModel):
         self.layers = args.mlp_hidden_size
         self.lat_dim = args.latent_dimension
         self.drop_out = args.dropout_prob
+        self.device = args.device
 
         # User-item Interaction
-        self.R = data_handler.get_inter()  # Equal to rating_matrix in RecBole implementation.
+        # Equal to rating_matrix in RecBole implementation.
+        self.R = scipy_coo_to_torch_sparse(data_handler.get_inter()).to_dense().to(device=self.device)
 
         # Encoder, Decoder of VAE
         self.encode_layer_dims = [self.item_num] + self.layers + [self.lat_dim]
         self.decode_layer_dims = [int(self.lat_dim / 2)] + self.encode_layer_dims[::-1][1:]
         self.encoder = self.mlp_layers(self.encode_layer_dims)
         self.decoder = self.mlp_layers(self.decode_layer_dims)
+
+        self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
 
     def mlp_layers(self, layer_dims):
         mlp_modules = []

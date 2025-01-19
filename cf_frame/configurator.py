@@ -50,7 +50,7 @@ def configurate():
 
     # MultiVAE
     multivae_parser = subparsers.add_parser('multivae', parents=[common_parser], help='MultiVAE model operations')
-    multivae_parser.add_argument('--mlp_hidden_size', default=600, type=int)
+    multivae_parser.add_argument('--mlp_hidden_size', default=[600], type=list)
     multivae_parser.add_argument('--latent_dimension', default=128, type=int)
     multivae_parser.add_argument('--dropout_prob', default=0.5, type=float)
     multivae_parser.add_argument('--anneal_cap', default=0.2, type=float)
