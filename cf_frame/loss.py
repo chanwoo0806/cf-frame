@@ -13,7 +13,7 @@ class NonParam:
 # MultiVAE Loss
 class VAELoss:
     def __init__(self):
-        self.type = 'vae'
+        self.type = 'useronly'
         self.update = 0
         self.anneal_cap = args.anneal_cap
         self.total_anneal_steps = args.total_anneal_steps

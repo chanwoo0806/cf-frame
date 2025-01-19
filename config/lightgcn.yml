@@ -1,6 +1,6 @@
 # Basic
 rand_seed: 2024
-dataset: amazon-book
+dataset: gowalla
 epoch: 1500
 trn_batch: 4096
 tensorboard: 1
