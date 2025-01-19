@@ -35,7 +35,7 @@ class VAELoss:
             * anneal
         )
 
-        rating_matrix = model.R[user]
+        rating_matrix = model.R[user, :]
         ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1).mean()
 
         loss = ce_loss + kl_loss

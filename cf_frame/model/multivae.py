@@ -51,7 +51,7 @@ class MultiVAE(BaseModel):
             return mu
         
     def forward(self, user):
-        rating_matrix = self.R[user]
+        rating_matrix = self.R[user, :]
         h = F.normalize(rating_matrix)
         h = F.dropout(h, self.drop_out, training=self.training)
         h = self.encoder(h)
