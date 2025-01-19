@@ -55,7 +55,7 @@ def configurate():
     gte_parser = subparsers.add_parser('gte', parents=[common_parser], help="gte model operations")
     
     # NeuMF
-    neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NGCF model operations")
+    neumf_parser = subparsers.add_parser('neumf', parents=[common_parser], help="NeuMF model operations")
     neumf_parser.add_argument('--dropout', default=0.1, type=float)
     neumf_parser.add_argument('--negative_num', type=int)
 
